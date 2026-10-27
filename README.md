@@ -6,7 +6,9 @@ This repository holds a working, clickable prototype with 30 mock creative and t
 
 ## Try it
 
-No install or build step is needed. Either:
+**Live prototype:** [harrisongreener.github.io/Rolla](https://harrisongreener.github.io/Rolla/)
+
+To run it yourself, no install or build step is needed. Either:
 
 - open `index.html` in a browser, or
 - serve the folder locally, for example `python3 -m http.server`, then visit `http://localhost:8000`.
