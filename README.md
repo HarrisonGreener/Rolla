@@ -6,14 +6,14 @@ This repository holds a working, clickable prototype with 30 mock creative and t
 
 ## Try it
 
-**Live prototype:** [open Rolla in your browser](https://claude.ai/artifact/JikixBdAWKCwDZqVBajaY5)
+**Live prototype:** [harrisongreener.github.io/Rolla](https://harrisongreener.github.io/Rolla/)
 
 To run it yourself, no install or build step is needed. Either:
 
 - open `index.html` in a browser, or
 - serve the folder locally, for example `python3 -m http.server`, then visit `http://localhost:8000`.
 
-To publish it, turn on GitHub Pages for this repository (Settings → Pages → deploy from the `main` branch, root folder).
+The live site is served by GitHub Pages from the `main` branch, so every push updates it.
 
 On a desktop browser it shows inside a phone frame. On a phone it fills the screen.
 
