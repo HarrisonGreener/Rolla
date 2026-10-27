@@ -1,20 +1,38 @@
-/* Screen templates. Each returns an HTML string; app.js wires up the events through data-act attributes. */
+/* Screen templates. Each returns an HTML string; app.js wires up events through data-act attributes. */
 (function () {
-  var D = window.ROLLA, S = window.STORE, I = window.ICONS, B = window.BRAND;
+  var D = window.ROLLA, S = window.STORE, I = window.ICONS, B = window.BRAND, A = window.ART;
 
   function esc(t) {
     return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
   }
-  function initial(name) { return esc(name.charAt(0)); }
-  function coLogo(c, size) {
-    var st = size ? ' style="width:' + size + 'px;height:' + size + 'px;border-radius:' + Math.round(size * 0.28) + 'px;font-size:' + Math.round(size * 0.46) + 'px"' : '';
-    return '<span class="co-logo"' + st + ' aria-hidden="true">' + initial(c.name) + '</span>';
-  }
+  function ico(svg, cls) { return '<span class="' + (cls || 'ico') + '">' + svg + '</span>'; }
   function fmt(n) { return n.toLocaleString('en-GB'); }
+  function co(job) { return D.company(job.co); }
+  function jobArt(job) { return A.art(job.art, co(job).brand, job.id); }
+  function list(items) { return items.join(''); }
+  function andList(a) { return a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+  function initials(name) { return name.split(' ').map(function (p) { return p.charAt(0); }).join('').slice(0, 2); }
+
+  function matchRing(pct) {
+    var c = 2 * Math.PI * 17, off = c * (1 - pct / 100);
+    return '<span class="match-ring" title="' + pct + '% match"><svg viewBox="0 0 40 40" aria-hidden="true">' +
+      '<circle cx="20" cy="20" r="17" fill="none" stroke="#E4E6E1" stroke-width="3"/>' +
+      '<circle cx="20" cy="20" r="17" fill="none" stroke="#1FAE80" stroke-width="3" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg>' +
+      '<b class="num">' + pct + '</b><span class="sr-only">% match</span></span>';
+  }
+  function verified(c) { return c.verified ? '<span class="ico-sm mint" title="Verified employer">' + I.verified + '<span class="sr-only">Verified</span></span>' : ''; }
+  function greeting() {
+    var h = new Date().getHours();
+    return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  }
+  function whyLine(job) {
+    if (job.matched.length) return '<p class="why">' + ico(I.sparkle, 'ico-sm') + 'Matches your ' + esc(andList(job.matched.slice(0, 2))) + '</p>';
+    return '<p class="why" style="color:var(--muted)">' + ico(I.sparkle, 'ico-sm') + 'A stretch role: ' + esc(job.tags[0]) + ' is new for you</p>';
+  }
 
   /* ---------- Tab bar ---------- */
   function tabbar(active) {
-    var n = Object.keys(S.get().applied).length;
+    var n = S.appliedList().length;
     var tabs = [['discover', 'Discover', I.discover], ['feed', 'Feed', I.feed], ['applied', 'Applied', I.applied], ['profile', 'Profile', I.profile]];
     return '<nav class="tabbar" aria-label="Main">' + tabs.map(function (t) {
       return '<button class="tab" data-act="tab" data-id="' + t[0] + '"' + (t[0] === active ? ' aria-current="page"' : '') + '>' + t[2] + t[1] +
@@ -22,289 +40,346 @@
     }).join('') + '</nav>';
   }
 
-  /* ---------- Discover: the swipe deck ---------- */
-  function card(job, depth) {
-    var c = D.company(job.companyId);
-    var read = S.isRead(job.id);
-    var cls = depth === 0 ? 'card top' : 'card back-' + depth;
-    return '<article class="' + cls + '" data-id="' + job.id + '"' + (depth === 0 ? ' tabindex="0" aria-label="' + esc(job.title + ' at ' + c.name + '. Tap for the full listing.') + '"' : ' aria-hidden="true"') + '>' +
-      '<div class="cover" style="background:' + c.tint.bg + '">' + coLogo(c, 72) +
-        '<span class="badge match num">' + job.match + '% match</span>' +
-        (S.isShortlisted(c.id) ? '<span class="badge badge-mint" style="position:absolute;top:14px;left:14px">Shortlisted</span>' : '') +
+  /* ---------- Discover ---------- */
+  function card(job, depth, arrive) {
+    var c = co(job), read = S.isRead(job.id), saved = S.isSaved(job.id);
+    var cls = depth === 0 ? 'card top' + (arrive ? ' arrive' : '') : 'card back-' + depth;
+    return '<article class="' + cls + '" data-id="' + job.id + '"' +
+      (depth === 0 ? ' tabindex="0" aria-label="' + esc(job.title + ' at ' + c.name + ', ' + job.salary + '. Press Enter to read the listing, arrow keys to swipe.') + '"' : ' aria-hidden="true"') + '>' +
+      '<div class="media">' + jobArt(job) + '<div class="shade"></div>' +
+        '<div class="on-media top">' + matchRing(job.match) +
+          (depth === 0 ? '<button class="save-btn" data-act="save" data-id="' + job.id + '" aria-pressed="' + saved + '" aria-label="' + (saved ? 'Saved' : 'Save for later') + '">' + (saved ? I.bookmarkFill : I.bookmark) + '</button>' : '') + '</div>' +
+        '<div class="on-media bottom"><span class="co-pill">' + A.mark(c, 30) + '<span class="label ellipsis">' + esc(c.name) + '</span>' + verified(c) + '</span>' +
+          (S.isShortlisted(c.id) ? '<span class="pill pill-mint">Shortlisted</span>' : '<span class="pill pill-dark num">' + esc(job.posted) + ' ago</span>') + '</div>' +
       '</div>' +
-      '<div class="stamp stamp-pass">PASS</div><div class="stamp stamp-apply">APPLY</div>' +
-      '<div class="content">' +
-        '<p class="label muted">' + esc(c.name) + ' · ' + esc(job.location) + '</p>' +
+      '<div class="stamp stamp-pass">' + I.x + 'PASS</div><div class="stamp stamp-apply">' + I.check + 'APPLY</div>' +
+      '<div class="body-area">' +
         '<h2 class="h1">' + esc(job.title) + '</h2>' +
-        '<p class="label mint num">' + esc(job.salary) + ' · ' + esc(job.mode) + ' · ' + esc(job.type) + '</p>' +
-        '<p class="body">' + esc(job.summary) + '</p>' +
-        '<div class="tags">' + job.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
-        '<div class="lockhint">' +
-          (read
-            ? '<p class="label mint row gap-6" style="display:flex">' + '<span style="width:16px;height:16px;display:inline-flex">' + I.check + '</span>Listing read. Swipe right to apply</p>'
-            : '<p class="label muted row gap-6" style="display:flex"><span style="width:16px;height:16px;display:inline-flex">' + I.lock + '</span>Tap to read the listing and unlock Apply</p>') +
-          '<div class="progress"><span style="width:' + (read ? 100 : 6) + '%"></span></div>' +
-        '</div>' +
+        '<div class="meta-row num"><span>' + ico(I.pound, 'ico-sm') + esc(job.salary) + '</span><span>' + ico(I.pin, 'ico-sm') + esc(job.loc) + '</span><span>' + ico(I.laptop, 'ico-sm') + esc(job.mode) + '</span></div>' +
+        whyLine(job) +
+        '<div class="readline">' + (read
+          ? '<span class="caption mint row g4" style="font-weight:600">' + ico(I.check, 'ico-sm') + 'Read · swipe right to apply</span>'
+          : '<span class="caption row g4">' + ico(I.lock, 'ico-sm') + 'Tap to read and unlock Apply</span>') +
+          '<span class="track"><span style="width:' + (read ? 100 : 4) + '%"></span></span></div>' +
       '</div>' +
     '</article>';
   }
 
-  function discover() {
-    var st = S.get();
-    var deck = S.deck();
-    var top = deck[0];
+  function discover(ui) {
+    var st = S.get(), deck = S.deck(), topJob = deck[0];
+    var counts = {};
+    D.jobs.forEach(function (j) { if (!S.isPassed(j.id) && !S.isApplied(j.id)) { counts[j.cat] = (counts[j.cat] || 0) + 1; counts['For you'] = (counts['For you'] || 0) + 1; } });
     var chips = D.categories.map(function (c) {
-      return '<button class="chip" data-act="filter" data-id="' + c + '" aria-pressed="' + (st.filter === c) + '">' + c + '</button>';
+      return '<button class="chip" data-act="filter" data-id="' + esc(c) + '" aria-pressed="' + (st.filter === c) + '">' + esc(c) + '<span class="count num">' + (counts[c] || 0) + '</span></button>';
     }).join('');
 
+    var heading = st.filter === 'For you' ? deck.length + ' roles picked for you' : deck.length + ' ' + st.filter + ' role' + (deck.length === 1 ? '' : 's');
     var body;
-    if (!top) {
-      body = '<div class="empty" style="flex:1;justify-content:center">' +
-        '<h2 class="h2">' + (st.filter === 'All' ? 'You’ve seen every job' : 'No more ' + esc(st.filter.toLowerCase()) + ' jobs') + '</h2>' +
-        '<p class="body muted">' + (st.filter === 'All' ? 'New roles land every morning. In the meantime you can look back at the ones you passed.' : 'Try another category, or bring back the jobs you passed.') + '</p>' +
-        (st.passed.length ? '<button class="btn btn-mint" data-act="unpass">' + I.undo + 'Review passed jobs</button>' : '') +
-        (st.filter !== 'All' ? '<button class="btn btn-ghost" data-act="filter" data-id="All">Show all jobs</button>' : '') +
+    if (!topJob) {
+      var any = D.jobs[0];
+      body = '<div class="empty" style="flex:1;justify-content:center;padding-bottom:110px">' +
+        '<div class="art-blob">' + A.art('motion', D.company('signal').brand, 'empty') + '</div>' +
+        '<h2 class="h2">' + (st.filter === 'For you' ? 'You’re all caught up' : 'No more ' + esc(st.filter) + ' roles') + '</h2>' +
+        '<p class="body muted">New roles land every morning. You can look again at the ones you passed, or try another discipline.</p>' +
+        (st.passed.length ? '<button class="btn btn-ink" data-act="unpass">' + I.undo + 'Review ' + st.passed.length + ' passed</button>' : '') +
+        (st.filter !== 'For you' ? '<button class="btn btn-ghost" data-act="filter" data-id="For you">Show all roles</button>' : '') +
         '</div>';
     } else {
-      var cards = deck.slice(0, 3).map(function (j, i) { return card(j, i); }).reverse().join('');
-      var read = S.isRead(top.id);
-      body = '<div class="deck" id="deck">' + cards + '</div>' +
-        '<div class="actions">' +
+      var read = S.isRead(topJob.id);
+      body = '<div class="deck" id="deck">' + deck.slice(0, 3).map(function (j, i) { return card(j, i, ui.arrive); }).reverse().join('') + '</div>' +
+        '<div class="actions" style="padding-bottom:96px">' +
           '<button class="round" data-act="pass" aria-label="Pass">' + I.x + '</button>' +
-          '<button class="round gold-round" data-act="standout" aria-label="Send a Standout">' + I.star + '</button>' +
+          '<button class="round gold" data-act="standout" aria-label="Send a Standout, ' + st.standoutsLeft + ' left">' + I.star + '<span class="left num">' + st.standoutsLeft + '</span></button>' +
           (read
-            ? '<button class="round apply-round" data-act="apply" aria-label="Apply">' + I.check + '</button>'
-            : '<button class="round locked" data-act="apply-locked" aria-label="Apply, locked until you read the listing" style="color:#5F5F5C">' + I.lock + '</button>') +
-        '</div>' +
-        '<p class="caption num" style="text-align:center;margin:2px 0 10px"><span class="gold" style="font-weight:500">' + st.standoutsLeft + ' of ' + S.STANDOUTS_PER_WEEK + ' Standouts left this week</span> · ' + deck.length + ' jobs to go</p>';
+            ? '<button class="round mint" data-act="apply" aria-label="Apply">' + I.check + '</button>'
+            : '<button class="round locked" data-act="apply-locked" aria-label="Apply is locked until you read the listing">' + I.lock + '</button>') +
+        '</div>';
     }
 
-    return '<section class="view" aria-label="Discover jobs">' +
-      '<div class="pad top-space"><div class="topbar">' + B.logo(27, 26) +
-        '<span class="caption">Manchester · 15 mi</span></div>' +
-        '<div class="chips" role="group" aria-label="Job categories">' + chips + '</div></div>' +
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="Discover">' +
+      '<div class="pad top-space"><div class="discover-head"><div class="col g4"><p class="eyebrow">' + greeting() + ', ' + esc(D.me.first) + '</p>' +
+        '<h1 class="h2 num">' + esc(heading) + '</h1></div>' +
+        B.logo(22, 21) + '</div>' +
+        '<div class="chips" role="group" aria-label="Disciplines">' + chips + '</div></div>' +
       body + '</section>' + tabbar('discover');
   }
 
   /* ---------- Job listing ---------- */
-  function jobView(job) {
-    var c = D.company(job.companyId);
-    var read = S.isRead(job.id);
-    var applied = S.get().applied[job.id];
+  function jobView(job, ui) {
+    var c = co(job), read = S.isRead(job.id), applied = S.get().applied[job.id], saved = S.isSaved(job.id);
+    var others = job.tags.filter(function (t) { return job.matched.indexOf(t) === -1; });
     var bar;
     if (applied) {
-      bar = '<div class="grow stack gap-6">' +
-        '<span class="badge ' + (applied.standout ? 'badge-gold' : 'badge-mint') + '" style="align-self:flex-start">' + (applied.standout ? I.star.replace('<svg', '<svg width="12" height="12"') + ' Standout sent' : 'Applied') + '</span>' +
-        '<span class="caption">' + (applied.standout ? 'You’re at the top of their list.' : 'Your profile has been sent.') + '</span></div>' +
+      var stage = S.appliedList().filter(function (x) { return x.job.id === job.id; })[0];
+      bar = '<div class="grow col g4"><span class="pill ' + (applied.standout ? 'pill-gold' : 'pill-mint') + '" style="align-self:flex-start">' +
+        ico(applied.standout ? I.star : I.check, 'ico-sm') + (applied.standout ? 'Standout sent' : 'Applied') + '</span>' +
+        '<span class="caption">Status: ' + esc(S.STAGES[stage ? stage.stage : 0]) + '</span></div>' +
         '<button class="btn btn-ghost btn-sm" data-act="withdraw" data-id="' + job.id + '">Withdraw</button>';
     } else {
-      bar = '<button class="round" style="width:52px;height:52px;flex:none" data-act="pass-job" data-id="' + job.id + '" aria-label="Pass">' + I.x + '</button>' +
-        '<button class="btn btn-gold grow" data-act="standout" data-id="' + job.id + '">' + I.star + 'Standout</button>' +
-        '<button id="apply-btn" class="btn grow ' + (read ? 'btn-mint' : 'btn-locked') + '" data-act="' + (read ? 'apply-job' : 'apply-locked') + '" data-id="' + job.id + '">' +
-          (read ? 'Apply' : I.lock + 'Apply') + '</button>';
+      bar = '<button class="round" style="width:52px;height:52px;box-shadow:var(--shadow-sm)" data-act="pass-job" data-id="' + job.id + '" aria-label="Pass">' + I.x + '</button>' +
+        '<button class="btn btn-gold" style="padding:0 18px" data-act="standout" data-id="' + job.id + '">' + I.star + 'Standout</button>' +
+        '<button id="apply-btn" class="btn btn-read grow' + (read ? ' ready' : '') + '" style="--p:' + (read ? 100 : 0) + '%" data-act="' + (read ? 'apply-job' : 'apply-locked') + '" data-id="' + job.id + '">' +
+          '<span class="fill"></span><span id="apply-label">' + (read ? I.check + 'Apply' : I.lock + 'Read to apply') + '</span></button>';
     }
 
-    return '<section class="view" aria-label="' + esc(job.title) + '">' +
-      '<div class="listing-head top-space">' +
-        '<div class="backbar"><button class="icon-btn" data-act="back" aria-label="Back">' + I.back + '</button>' +
-        '<div style="flex:1;min-width:0"><p class="h3" style="font-size:16px">' + esc(job.title) + '</p><p class="caption">' + esc(c.name) + '</p></div>' +
-        '<span id="read-label" class="caption" style="font-weight:500;' + (read ? 'color:#0E7052' : '') + '">' + (read ? 'Apply unlocked' : 'Read to unlock') + '</span></div>' +
-        '<div class="progress" role="progressbar" aria-label="Listing read" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + (read ? 100 : 0) + '"><span id="read-bar" style="width:' + (read ? 100 : 0) + '%"></span></div>' +
-      '</div>' +
-      '<div class="scroll" id="job-scroll" data-id="' + job.id + '"><div class="pad stack gap-20" style="padding-top:20px;padding-bottom:28px">' +
-        '<div class="stack gap-8"><span class="badge badge-grey" style="align-self:flex-start">' + esc(job.category) + '</span>' +
-          '<h1 class="h1">' + esc(job.title) + '</h1>' +
-          '<p class="label mint num">' + esc(job.salary) + ' · ' + esc(job.mode) + ' · ' + esc(job.type) + '</p>' +
-          '<p class="caption num">' + esc(job.location) + ' · ' + job.applicants + ' applicants · ' + job.match + '% match</p></div>' +
-        '<div class="section"><h2 class="h2">About the role</h2><p class="body">' + esc(job.about) + '</p></div>' +
-        '<div class="section"><h3 class="h3">What you’ll do</h3><ul class="list">' + job.duties.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul></div>' +
-        '<div class="facts">' +
-          '<div class="fact"><p class="caption">Salary</p><p class="label mint num" style="font-size:15px">' + esc(job.salary) + '</p></div>' +
-          '<div class="fact"><p class="caption">Working</p><p class="label" style="font-size:15px">' + esc(job.mode) + '</p></div>' +
-          '<div class="fact"><p class="caption">Contract</p><p class="label" style="font-size:15px">' + esc(job.type) + '</p></div>' +
-          '<div class="fact"><p class="caption">Closes</p><p class="label num" style="font-size:15px">' + esc(job.closes) + '</p></div>' +
+    var facts = [[I.pound, 'Salary', job.salary], [I.laptop, 'Working', job.mode], [I.clock, 'Contract', job.type],
+      [I.pin, 'Location', job.loc], [I.calendar, 'Closes', job.closes], [I.users, 'Applicants', String(job.applicants)]];
+
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="' + esc(job.title) + '">' +
+      '<div class="scroll" id="job-scroll" data-id="' + job.id + '">' +
+        '<div class="hero">' + jobArt(job) +
+          '<div class="hero-bar"><button class="icon-btn" data-act="back" aria-label="Back">' + I.back + '</button>' +
+          '<div class="row g8"><button class="icon-btn" data-act="save" data-id="' + job.id + '" aria-pressed="' + saved + '" aria-label="' + (saved ? 'Saved' : 'Save for later') + '" style="color:' + (saved ? 'var(--mint-text)' : 'var(--ink)') + '">' + (saved ? I.bookmarkFill : I.bookmark) + '</button>' +
+          '<button class="icon-btn" data-act="share" aria-label="Share">' + I.share + '</button></div></div></div>' +
+        '<div class="sheet-body">' +
+          '<div class="col g12">' +
+            '<button class="row g10" data-act="company" data-id="' + c.id + '" style="background:none;border:none;padding:0;text-align:left">' + A.mark(c, 40) +
+              '<span class="grow"><span class="row g4 h4">' + esc(c.name) + verified(c) + '</span><span class="caption">' + esc(c.sector) + '</span></span></button>' +
+            '<h1 class="h1">' + esc(job.title) + '</h1>' +
+            '<p class="body">' + esc(job.summary) + '</p>' +
+            '<div class="row g6 wrap"><span class="pill pill-grey">' + esc(job.cat) + '</span><span class="pill pill-grey num">Posted ' + esc(job.posted) + ' ago</span>' +
+              (S.isShortlisted(c.id) ? '<span class="pill pill-mint">Shortlisted studio</span>' : '') + '</div>' +
+          '</div>' +
+          '<div class="facts">' + facts.map(function (f) {
+            return '<div class="fact">' + ico(f[0], 'ico-sm') + '<p class="caption">' + f[1] + '</p><p class="v num">' + esc(f[2]) + '</p></div>';
+          }).join('') + '</div>' +
+          '<div class="match-panel"><div class="row between"><p class="h4">How you match</p><p class="h3 mint num">' + job.match + '%</p></div>' +
+            '<div class="meter"><span style="width:' + job.match + '%"></span></div>' +
+            '<div class="row g6 wrap">' + job.matched.map(function (t) { return '<span class="tag match">' + ico(I.check, 'ico-sm') + esc(t) + '</span>'; }).join('') +
+              others.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
+            '<p class="caption">' + (job.matched.length ? 'Green skills are on your profile.' : 'None of these are on your profile yet, so think of this as a stretch.') + '</p></div>' +
+          '<div class="section"><h2 class="h3">About the role</h2><p class="body">' + esc(job.about) + '</p></div>' +
+          '<div class="section"><h2 class="h3">What you’ll do</h2><ul class="checks">' + list(job.duties.map(function (d) { return '<li>' + ico(I.check, 'ico-sm') + esc(d) + '</li>'; })) + '</ul></div>' +
+          '<div class="quote"><p class="eyebrow" style="margin-bottom:6px">A day in the role</p><p class="body" style="color:var(--ink)">' + esc(job.day) + '</p></div>' +
+          '<div class="section"><h2 class="h3">You’d work with</h2><div class="team-row">' + c.team.map(function (p) {
+            return '<div class="person-card"><span class="avatar" style="background:' + c.brand.bg + ';color:' + c.brand.ink + '">' + esc(initials(p[0])) + '</span>' +
+              '<span><span class="h4" style="display:block">' + esc(p[0]) + '</span><span class="caption">' + esc(p[1]) + '</span></span></div>';
+          }).join('') + '</div></div>' +
+          '<div class="section"><h2 class="h3">What they offer</h2><ul class="checks">' + list(job.offers.map(function (d) { return '<li>' + ico(I.sparkle, 'ico-sm') + esc(d) + '</li>'; })) + '</ul></div>' +
+          '<button class="row-link" data-act="company" data-id="' + c.id + '"><span class="thumb">' + A.art('brand', c.brand, c.id + 'thumb') + '</span>' +
+            '<span class="grow"><span class="h4" style="display:block">About ' + esc(c.name) + '</span><span class="caption">Their ethos, team, work and other roles</span></span>' + I.chev + '</button>' +
+          '<p class="caption" style="text-align:center;padding-bottom:84px">' + (read ? 'You’ve read the whole listing.' : 'Keep scrolling to the end to unlock Apply.') + '</p>' +
         '</div>' +
-        '<div class="section"><h3 class="h3">What they offer</h3><ul class="list">' + job.offers.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul></div>' +
-        '<div class="section"><h3 class="h3">Skills they’re after</h3><div class="row gap-6" style="flex-wrap:wrap;display:flex">' + job.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div></div>' +
-        '<button class="row-link" data-act="company" data-id="' + c.id + '">' + coLogo(c, 44) +
-          '<span class="grow"><span class="h3" style="display:block;font-size:16px">' + esc(c.name) + '</span><span class="caption" style="display:block">See their ethos, team and other roles</span></span>' + I.chev + '</button>' +
-        '<p class="caption" style="text-align:center">You’ve reached the end of the listing.</p>' +
-      '</div></div>' +
+      '</div>' +
       '<div class="bottombar" id="job-bar">' + bar + '</div>' +
     '</section>';
   }
 
-  /* ---------- Company profile ---------- */
-  function companyView(c) {
+  /* ---------- Company ---------- */
+  function companyView(c, ui) {
     var on = S.isShortlisted(c.id);
-    var roles = D.jobs.filter(function (j) { return j.companyId === c.id; });
-    return '<section class="view" aria-label="' + esc(c.name) + '"><div class="scroll">' +
-      '<div style="height:150px;background:' + c.tint.bg + ';position:relative">' +
-        '<button class="icon-btn" data-act="back" aria-label="Back" style="position:absolute;top:max(20px, env(safe-area-inset-top));left:20px;border:none">' + I.back + '</button></div>' +
-      '<div class="pad stack gap-16" style="margin-top:-36px;padding-bottom:28px">' +
-        '<span style="border:4px solid #F7F7F5;border-radius:24px;display:inline-flex;align-self:flex-start">' + coLogo(c, 68) + '</span>' +
-        '<div><h1 class="h1">' + esc(c.name) + '</h1><p class="label muted" style="margin-top:4px">' + esc(c.sector) + ' · ' + esc(c.location) + ' · ' + esc(c.size) + '</p></div>' +
-        '<div class="row gap-16 num" style="display:flex;flex-wrap:wrap">' +
-          '<p class="caption"><span class="h3" style="font-size:16px;color:#0E0E0E">' + fmt(c.shortlisted + (on ? 1 : 0)) + '</span> shortlisted</p>' +
-          '<p class="caption"><span class="h3" style="font-size:16px;color:#0E0E0E">' + roles.length + '</span> open roles</p>' +
-          '<p class="caption"><span class="h3" style="font-size:16px;color:#0E0E0E">' + esc(c.reply) + '</span> avg reply</p></div>' +
-        '<button class="btn btn-block ' + (on ? 'btn-outline-mint' : 'btn-mint') + '" data-act="shortlist" data-id="' + c.id + '" aria-pressed="' + on + '">' + (on ? I.check + 'Shortlisted' : 'Shortlist this company') + '</button>' +
-        '<p class="caption" style="margin-top:-8px">Shortlisted companies’ jobs appear first in your deck.</p>' +
-        '<div class="section"><h2 class="h3">Our ethos</h2><p class="body">' + esc(c.ethos) + '</p></div>' +
+    var roles = D.jobs.filter(function (j) { return j.co === c.id; });
+    // Recent work uses the disciplines this studio actually hires for.
+    var kinds = [];
+    roles.forEach(function (j) { if (kinds.indexOf(j.art) === -1) kinds.push(j.art); });
+    ['brand', 'editorial'].forEach(function (k) { if (kinds.length < 3 && kinds.indexOf(k) === -1) kinds.push(k); });
+    var mainKind = kinds[0] || 'brand';
+    var work = c.clients.concat(['Studio experiments']).slice(0, 4).map(function (name, i) {
+      var kind = kinds[i % kinds.length];
+      return '<figure><div class="frame">' + A.art(kind, c.brand, c.id + name) + '</div><figcaption>' + esc(name) + '</figcaption></figure>';
+    }).join('');
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="' + esc(c.name) + '"><div class="scroll">' +
+      '<div class="hero" style="height:210px">' + A.art(mainKind, c.brand, c.id + 'hero') +
+        '<div class="hero-bar"><button class="icon-btn" data-act="back" aria-label="Back">' + I.back + '</button><button class="icon-btn" data-act="share" aria-label="Share">' + I.share + '</button></div></div>' +
+      '<div class="sheet-body" style="padding-bottom:40px">' +
+        '<div class="col g12"><div style="margin-top:-56px">' + '<span style="display:inline-flex;border:5px solid var(--bg);border-radius:26px;box-shadow:var(--shadow-md)">' + A.mark(c, 72) + '</span></div>' +
+          '<div class="col g4"><h1 class="h1 row g6">' + esc(c.name) + verified(c) + '</h1><p class="small muted">' + esc(c.sector) + ' · ' + esc(c.location) + '</p>' +
+          '<p class="caption num">' + esc(c.size) + ' · Founded ' + c.founded + '</p></div></div>' +
+        '<div class="stats num"><div><b>' + fmt(c.shortlisted + (on ? 1 : 0)) + '</b><span class="caption">shortlisted</span></div><div><b>' + roles.length + '</b><span class="caption">open roles</span></div><div><b>' + esc(c.reply) + '</b><span class="caption">avg reply</span></div></div>' +
+        '<div class="col g8"><button class="btn btn-block ' + (on ? 'btn-outline' : 'btn-ink') + '" data-act="shortlist" data-id="' + c.id + '" aria-pressed="' + on + '">' + (on ? I.check + 'Shortlisted' : I.plus + 'Shortlist this studio') + '</button>' +
+          '<p class="caption" style="text-align:center">Jobs from shortlisted studios come first in your deck.</p></div>' +
+        '<div class="section"><p class="eyebrow">Ethos</p><p class="big-quote">' + esc(c.ethos) + '</p></div>' +
+        '<div class="section"><h2 class="h3">Recent work</h2><div class="gallery">' + work + '</div></div>' +
+        '<div class="section"><h2 class="h3">The team</h2><div class="team-row">' + c.team.map(function (p) {
+          return '<div class="person-card"><span class="avatar" style="background:' + c.brand.bg + ';color:' + c.brand.ink + '">' + esc(initials(p[0])) + '</span><span><span class="h4" style="display:block">' + esc(p[0]) + '</span><span class="caption">' + esc(p[1]) + '</span></span></div>';
+        }).join('') + '</div></div>' +
         '<div class="section"><h2 class="h3">Open roles</h2>' + roles.map(function (j) {
           var a = S.get().applied[j.id];
-          var status = a ? (a.standout ? '<span class="badge badge-gold">Standout sent</span>' : '<span class="badge badge-mint">Applied</span>') : (S.isPassed(j.id) ? '<span class="badge badge-grey">Passed</span>' : '');
-          return '<button class="row-link" data-act="job" data-id="' + j.id + '"><span class="grow"><span class="h3" style="display:block;font-size:15px">' + esc(j.title) + '</span>' +
-            '<span class="label mint num" style="display:block">' + esc(j.salary) + ' · ' + esc(j.mode) + '</span></span>' + status + I.chev + '</button>';
+          var status = a ? '<span class="pill ' + (a.standout ? 'pill-gold' : 'pill-mint') + '">' + (a.standout ? 'Standout' : 'Applied') + '</span>' : S.isPassed(j.id) ? '<span class="pill pill-grey">Passed</span>' : '<span class="pill pill-mint num">' + j.match + '%</span>';
+          return '<button class="row-link" data-act="job" data-id="' + j.id + '"><span class="thumb">' + jobArt(j) + '</span><span class="grow"><span class="h4" style="display:block">' + esc(j.title) + '</span>' +
+            '<span class="caption num">' + esc(j.salary) + ' · ' + esc(j.mode) + '</span></span>' + status + '</button>';
         }).join('') + '</div>' +
       '</div></div></section>';
   }
 
   /* ---------- Feed ---------- */
-  function feed() {
+  function feed(ui) {
     var st = S.get();
+    var stories = '<button class="story" data-act="tab" data-id="profile"><span class="ring seen"><span class="inner">' + A.art(D.me.work[0].art, D.me.work[0].brand, 'me-story') + '</span></span>Your work</button>' +
+      D.people.map(function (p, i) {
+        var post = D.posts.filter(function (x) { return x.who === p.id && x.art; })[0];
+        var art = post ? A.art(post.art, post.brand, p.id) : '<span class="avatar" style="width:100%;height:100%;background:' + p.color + '">' + esc(p.initials) + '</span>';
+        return '<button class="story" data-act="person" data-id="' + p.id + '"><span class="ring"><span class="inner">' + art + '</span></span><span class="ellipsis" style="max-width:66px">' + esc(p.name.split(' ')[0]) + '</span></button>';
+      }).join('');
+
     var posts = D.posts.map(function (p) {
-      var liked = !!st.liked[p.id];
-      var who, avatar;
-      if (p.kind === 'company') { var c = D.company(p.companyId); who = c.name; avatar = coLogo(c, 36); }
-      else { who = p.author; avatar = '<span class="avatar" style="width:36px;height:36px;background:#0E0E0E;color:#fff">' + esc(p.initials) + '</span>'; }
-      var job = p.jobId ? D.job(p.jobId) : null;
-      return '<article class="panel stack gap-10" style="padding:0;overflow:hidden">' +
-        '<div class="row gap-10" style="display:flex;padding:12px 14px 0">' + avatar + '<div style="flex:1"><p class="h3" style="font-size:15px">' + esc(who) + '</p><p class="caption">' + esc(p.meta) + '</p></div></div>' +
-        (p.image ? '<div style="height:180px;background:' + p.tint.bg + ';color:' + p.tint.fg + ';display:flex;align-items:center;justify-content:center" class="label">[' + esc(p.image) + ']</div>' : '') +
-        '<div class="stack gap-10" style="padding:0 14px 12px"><p class="body">' + esc(p.text) + '</p>' +
-        (job ? '<button class="row-link" style="background:#ECFBF5;border-color:#ECFBF5;padding:10px 12px" data-act="job" data-id="' + job.id + '"><span class="grow label">' + esc(job.title) + ' · <span class="mint num">' + esc(job.salary) + '</span></span><span class="label mint">View role</span></button>' : '') +
-        '<div class="row gap-16 caption num" style="display:flex;align-items:center">' +
-          '<button class="link-btn row gap-6" style="display:flex;padding:4px 0;color:' + (liked ? '#D63B40' : '#5F5F5C') + '" data-act="like" data-id="' + p.id + '" aria-pressed="' + liked + '"><span style="width:18px;height:18px;display:inline-flex">' + (liked ? I.heartFill : I.heart) + '</span>' + (p.likes + (liked ? 1 : 0)) + '</button>' +
-          '<span>' + p.comments + ' comments</span>' +
-          (p.vouch ? '<span class="mint" style="font-weight:500">Vouch for ' + esc(p.vouch) + '</span>' : '') +
-        '</div></div></article>';
+      var liked = !!st.liked[p.id], head, media = '';
+      if (p.kind === 'company') {
+        var c = D.company(p.co);
+        head = A.mark(c, 40) + '<div class="grow"><p class="h4 row g4">' + esc(c.name) + verified(c) + '</p><p class="caption">' + esc(p.meta) + '</p></div>';
+        if (p.art) media = '<div class="media">' + A.art(p.art, c.brand, p.id) + '</div>';
+      } else {
+        var who = D.person(p.who);
+        head = '<span class="avatar" style="background:' + who.color + '">' + esc(who.initials) + '</span><div class="grow"><p class="h4">' + esc(who.name) + '</p><p class="caption">' + esc(who.role) + ' · ' + esc(p.meta) + '</p></div>';
+        if (p.art) media = '<div class="media">' + A.art(p.art, p.brand, p.id) + '</div>';
+      }
+      var job = p.job ? D.job(p.job) : null;
+      var vouched = !!st.liked['v' + p.id];
+      return '<article class="post"><div class="row g10">' + head + '</div>' +
+        (p.milestone ? '<div class="milestone">' + ico(I.sparkle) + esc(p.milestone) + '</div>' : '') +
+        media + '<p class="body">' + esc(p.text) + '</p>' +
+        (job ? '<button class="job-attach" data-act="job" data-id="' + job.id + '"><span class="thumb" style="width:48px;height:48px">' + jobArt(job) + '</span>' +
+          '<span class="grow"><span class="h4" style="display:block">' + esc(job.title) + '</span><span class="caption num">' + esc(job.salary) + ' · ' + esc(job.loc) + '</span></span><span class="ico mint">' + I.arrowUR + '</span></button>' : '') +
+        '<div class="post-actions num">' +
+          '<button data-act="like" data-id="' + p.id + '" aria-pressed="' + liked + '" aria-label="Like">' + ico(liked ? I.heartFill : I.heart) + (p.likes + (liked ? 1 : 0)) + '</button>' +
+          '<button aria-label="Comments">' + ico(I.comment) + p.comments + '</button>' +
+          (p.vouch ? '<button class="vouch" data-act="like" data-id="v' + p.id + '" aria-pressed="' + vouched + '">' + (vouched ? 'Vouched for ' : 'Vouch for ') + esc(p.vouch) + '</button>' : '') +
+        '</div></article>';
     });
-    var suggest = '<div class="panel stack gap-12"><p class="label">People you may know</p>' + D.people.map(function (p) {
-      var on = st.acquaintances.indexOf(p.id) !== -1;
-      return '<div class="row gap-10" style="display:flex"><span class="avatar" style="background:#EDEDEA">' + esc(p.initials) + '</span>' +
-        '<div style="flex:1;min-width:0"><p class="label">' + esc(p.name) + '</p><p class="caption">' + esc(p.role) + ' · ' + p.mutual + ' mutual</p></div>' +
-        '<button class="btn btn-sm ' + (on ? 'btn-outline-mint' : 'btn-mint') + '" style="height:36px;padding:0 12px;font-size:13px" data-act="acq" data-id="' + p.id + '" aria-pressed="' + on + '">' + (on ? 'Acquaintance ✓' : 'Add') + '</button></div>';
-    }).join('') + '<p class="caption">Add someone as an acquaintance. When they add you back, you’re associates.</p></div>';
+
+    var suggest = '<div class="post"><div class="row between"><p class="h4">People you may know</p><span class="caption">From your course and studios</span></div>' +
+      D.people.slice(1, 5).map(function (p) {
+        var on = st.acquaintances.indexOf(p.id) !== -1;
+        return '<div class="row g10"><span class="avatar" style="background:' + p.color + '">' + esc(p.initials) + '</span>' +
+          '<div class="grow"><p class="h4 ellipsis">' + esc(p.name) + '</p><p class="caption ellipsis">' + esc(p.role) + ' · ' + p.mutual + ' mutual</p></div>' +
+          '<button class="btn btn-xs ' + (on ? 'btn-outline' : 'btn-ink') + '" data-act="acq" data-id="' + p.id + '" aria-pressed="' + on + '">' + (on ? 'Added' : 'Add') + '</button></div>';
+      }).join('') + '<p class="caption">Add someone as an acquaintance. When they add you back, you become associates.</p></div>';
     posts.splice(2, 0, suggest);
 
-    return '<section class="view" aria-label="Feed"><div class="pad top-space" style="background:#fff;border-bottom:1px solid #E6E6E3;padding-bottom:12px">' +
-      '<div class="topbar"><h1 class="h1">Feed</h1></div></div>' +
-      '<div class="scroll"><div class="pad stack gap-14" style="padding-top:16px;padding-bottom:24px;gap:14px">' +
-        '<label class="panel row gap-10" style="display:flex;padding:10px 12px"><span class="avatar" style="background:#7EE8C3;color:#0A513C;width:34px;height:34px">' + esc(D.me.initials) + '</span>' +
-        '<span class="sr-only">New post</span><input placeholder="Share some work or an update" style="flex:1;min-width:0;border:none;background:transparent;font-size:15px;outline:none"></label>' +
-        posts.join('') +
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="Feed"><div class="scroll"><div class="pad top-space col g16 tab-space">' +
+      '<div class="row between"><div class="col g4"><p class="eyebrow">From your associates and studios</p><h1 class="h1">Feed</h1></div>' +
+        '<button class="icon-btn" data-act="compose" aria-label="New post">' + I.plus + '</button></div>' +
+      '<div class="stories">' + stories + '</div>' +
+      posts.join('') +
       '</div></div></section>' + tabbar('feed');
   }
 
   /* ---------- Applied ---------- */
-  function appliedView() {
-    var list = S.appliedList();
-    var st = S.get();
+  function appliedView(ui) {
+    var apps = S.appliedList(), saved = S.savedList(), st = S.get();
+    var tab = ui.appliedTab || 'applied';
+    var standouts = apps.filter(function (x) { return x.info.standout; }).length;
     var inner;
-    if (!list.length) {
-      inner = '<div class="empty"><span style="width:48px;height:48px;color:#5F5F5C;display:inline-flex">' + I.applied + '</span>' +
-        '<h2 class="h2">No applications yet</h2><p class="body muted">Read a listing all the way through to unlock Apply, then swipe right.</p>' +
-        '<button class="btn btn-mint" data-act="tab" data-id="discover">Start swiping</button></div>';
+    if (tab === 'saved') {
+      inner = saved.length ? saved.map(function (j) {
+        var c = co(j);
+        return '<button class="row-link" data-act="job" data-id="' + j.id + '"><span class="thumb">' + jobArt(j) + '</span><span class="grow"><span class="h4 ellipsis" style="display:block">' + esc(j.title) + '</span>' +
+          '<span class="caption ellipsis" style="display:block">' + esc(c.name) + ' · ' + esc(j.salary) + '</span></span><span class="pill pill-mint num">' + j.match + '%</span></button>';
+      }).join('') : '<div class="empty"><div class="art-blob">' + A.art('editorial', D.company('quill').brand, 'saved-empty') + '</div><h2 class="h3">Nothing saved yet</h2><p class="body muted">Tap the bookmark on any card to keep it for later.</p></div>';
+    } else if (!apps.length) {
+      inner = '<div class="empty"><div class="art-blob">' + A.art('brand', D.company('northpaw').brand, 'applied-empty') + '</div>' +
+        '<h2 class="h3">No applications yet</h2><p class="body muted">Read a listing to the end to unlock Apply, or send a Standout to jump the queue.</p>' +
+        '<button class="btn btn-ink" data-act="tab" data-id="discover">Start swiping</button></div>';
     } else {
-      inner = list.map(function (x) {
-        var j = x.job, c = D.company(j.companyId);
-        return '<button class="row-link' + (x.info.standout ? ' standout-card' : '') + '" data-act="job" data-id="' + j.id + '">' + coLogo(c, 40) +
-          '<span class="grow"><span class="h3" style="display:block;font-size:15px">' + esc(j.title) + '</span><span class="caption" style="display:block">' + esc(c.name) + ' · ' + esc(j.location) + '</span>' +
-          (x.info.standout && x.info.msg ? '<span class="caption" style="display:block;margin-top:4px;color:#2E2E2E">“' + esc(x.info.msg) + '”</span>' : '') + '</span>' +
-          (x.info.standout ? '<span class="badge badge-gold">Standout</span>' : '<span class="badge badge-mint">Sent</span>') + '</button>';
+      inner = apps.map(function (x) {
+        var j = x.job, c = co(j);
+        return '<button class="app-card' + (x.info.standout ? ' standout' : '') + '" data-act="job" data-id="' + j.id + '">' +
+          '<span class="row g12"><span class="thumb" style="width:52px;height:52px">' + jobArt(j) + '</span><span class="grow"><span class="h4 ellipsis" style="display:block">' + esc(j.title) + '</span>' +
+          '<span class="caption ellipsis" style="display:block">' + esc(c.name) + ' · ' + esc(j.loc) + '</span></span>' +
+          (x.info.standout ? '<span class="pill pill-gold">' + ico(I.star, 'ico-sm') + 'Standout</span>' : '') + '</span>' +
+          (x.info.standout && x.info.msg ? '<span class="msg-quote">“' + esc(x.info.msg) + '”</span>' : '') +
+          '<span class="timeline">' + S.STAGES.map(function (s, i) {
+            return '<span class="step' + (i < x.stage ? ' done' : i === x.stage ? ' now' : '') + '"><span class="bar"></span><span>' + s + '</span></span>';
+          }).join('') + '</span></button>';
       }).join('');
     }
-    return '<section class="view" aria-label="Applied"><div class="pad top-space" style="background:#fff;border-bottom:1px solid #E6E6E3;padding-bottom:12px">' +
-      '<div class="topbar"><h1 class="h1">Applied</h1><span class="caption num">' + list.length + ' sent</span></div></div>' +
-      '<div class="scroll"><div class="pad stack gap-10" style="padding-top:16px;padding-bottom:24px">' + inner +
-        (st.passed.length ? '<button class="link-btn" data-act="unpass">Bring back ' + st.passed.length + ' passed job' + (st.passed.length === 1 ? '' : 's') + '</button>' : '') +
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="Applied"><div class="scroll"><div class="pad top-space col g16 tab-space">' +
+      '<div class="col g4"><p class="eyebrow num">' + apps.length + ' sent · ' + standouts + ' Standout' + (standouts === 1 ? '' : 's') + '</p><h1 class="h1">Your applications</h1></div>' +
+      '<div class="segmented" role="group" aria-label="Show"><button data-act="applied-tab" data-id="applied" aria-pressed="' + (tab === 'applied') + '">Applied <span class="num">' + apps.length + '</span></button>' +
+        '<button data-act="applied-tab" data-id="saved" aria-pressed="' + (tab === 'saved') + '">Saved <span class="num">' + saved.length + '</span></button></div>' +
+      inner +
+      (tab === 'applied' && apps.length ? '<p class="caption" style="text-align:center">Applications move along as employers review them. Standouts get seen first.</p>' : '') +
+      (st.passed.length ? '<button class="link muted" data-act="unpass">Bring back ' + st.passed.length + ' passed role' + (st.passed.length === 1 ? '' : 's') + '</button>' : '') +
       '</div></div></section>' + tabbar('applied');
   }
 
   /* ---------- Profile ---------- */
-  function profileView() {
-    var m = D.me, st = S.get();
-    var tints = D.tint;
-    return '<section class="view" aria-label="Your profile"><div class="scroll"><div class="pad top-space stack gap-16" style="padding-bottom:28px">' +
-      '<div class="topbar">' + B.logo(24, 22) + '<button class="link-btn" data-act="reset">Reset demo</button></div>' +
-      '<div class="row gap-16" style="display:flex"><span class="avatar" style="width:84px;height:84px;border-radius:42px;font-size:30px;background:#7EE8C3;color:#0A513C">' + esc(m.initials) + '</span>' +
-        '<div class="row gap-16 num" style="display:flex">' +
-          '<div><p class="h3">' + m.associates + '</p><p class="caption">associates</p></div>' +
-          '<div><p class="h3">' + fmt(m.acquaintances + st.acquaintances.length) + '</p><p class="caption">acquaintances</p></div>' +
-          '<div><p class="h3">' + m.posts + '</p><p class="caption">posts</p></div></div></div>' +
-      '<div><h1 class="h2">' + esc(m.name) + '</h1><p class="label mint" style="margin:2px 0 6px">' + esc(m.role) + ' · ' + esc(m.location) + '</p><p class="body">' + esc(m.bio) + '</p></div>' +
-      '<div class="row gap-8" style="display:flex"><button class="btn btn-ghost btn-sm" style="flex:1">Edit profile</button><button class="btn btn-ghost btn-sm" style="flex:1">View CV</button></div>' +
-      '<div class="panel row gap-12" style="display:flex;background:#FFF6DB;border-color:#FFF6DB"><span class="star-badge">' + I.star + '</span>' +
-        '<div style="flex:1"><p class="label" style="color:#6B4500">' + st.standoutsLeft + ' of ' + S.STANDOUTS_PER_WEEK + ' Standouts left</p><p class="caption" style="color:#6B4500">Your Standouts refill every Monday.</p></div></div>' +
-      '<div class="panel stack gap-6"><p class="caption" style="font-weight:500">Pinned · How I work</p><p class="body">' + esc(m.howIWork) + '</p></div>' +
-      '<div class="stack gap-8"><p class="label muted">Vouched by associates</p><div class="row gap-6" style="display:flex;flex-wrap:wrap">' +
-        m.vouches.map(function (v) { return '<span class="tag num" style="font-size:13px;padding:5px 10px">' + esc(v[0]) + ' · ' + v[1] + '</span>'; }).join('') + '</div></div>' +
-      '<button class="row-link" data-act="employer"><span style="width:24px;height:24px;display:inline-flex;color:#0E7052">' + I.eye + '</span>' +
-        '<span class="grow"><span class="h3" style="display:block;font-size:15px">Preview the employer view</span><span class="caption" style="display:block">See how your applications look to a recruiter</span></span>' + I.chev + '</button>' +
-      '<div class="tabs-line"><span class="on">Work</span><span>Process</span><span>Updates</span></div>' +
-      '<div class="grid3" style="margin:0 -20px">' + m.work.map(function (w) { var t = tints[w[1]]; return '<div class="tile" style="background:' + t.bg + ';color:' + t.fg + '">[' + esc(w[0]) + ']</div>'; }).join('') + '</div>' +
+  function profileView(ui) {
+    var m = D.me, st = S.get(), w0 = m.work[0];
+    var slots = '';
+    for (var i = 0; i < S.STANDOUTS_PER_WEEK; i++) slots += '<span class="' + (i < st.standoutsLeft ? '' : 'used') + '">' + I.star + '</span>';
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="Your profile"><div class="scroll">' +
+      '<div class="banner">' + A.art(w0.art, w0.brand, 'banner') +
+        '<div class="hero-bar" style="position:absolute;top:max(14px, env(safe-area-inset-top));left:16px;right:16px;display:flex;justify-content:space-between">' + '<span class="pill pill-glass" style="padding:6px 12px">' + B.logo(18, 16) + '</span>' +
+        '<button class="icon-btn" data-act="share" aria-label="Share profile">' + I.share + '</button></div></div>' +
+      '<div class="pad col g20 tab-space" style="margin-top:-48px;position:relative">' +
+        '<div class="row between" style="align-items:flex-end"><span class="me-avatar">' + esc(m.initials) + '</span>' +
+          '<div class="row g16 num" style="padding-bottom:6px"><div class="col"><b class="h3">' + m.associates + '</b><span class="caption">associates</span></div>' +
+          '<div class="col"><b class="h3">' + fmt(m.acquaintances + st.acquaintances.length) + '</b><span class="caption">acquaintances</span></div></div></div>' +
+        '<div class="col g6"><h1 class="h1">' + esc(m.name) + '</h1><p class="label mint">' + esc(m.role) + '</p>' +
+          '<p class="caption row g4">' + ico(I.pin, 'ico-sm') + esc(m.location) + ' · ' + esc(m.education) + '</p>' +
+          '<p class="body" style="margin-top:4px">' + esc(m.bio) + '</p></div>' +
+        '<div class="row g8"><button class="btn btn-ink btn-sm grow" data-act="compose">Edit profile</button><button class="btn btn-ghost btn-sm grow" data-act="share">View CV</button></div>' +
+        '<div class="card-surface row g14" style="padding:16px;background:var(--gold-tint);box-shadow:none"><div class="star-slots">' + slots + '</div>' +
+          '<div class="grow"><p class="h4" style="color:var(--gold-deep)">' + st.standoutsLeft + ' of ' + S.STANDOUTS_PER_WEEK + ' Standouts left</p><p class="caption" style="color:var(--gold-deep)">They refill every Monday.</p></div></div>' +
+        '<div class="quote"><p class="eyebrow" style="margin-bottom:6px">How I work</p><p class="body" style="color:var(--ink)">' + esc(m.howIWork) + '</p></div>' +
+        '<div class="section"><div class="row between"><h2 class="h3">Vouched skills</h2><span class="caption">by associates</span></div><div class="row g6 wrap">' +
+          m.vouches.map(function (v) { return '<span class="tag match num">' + esc(v[0]) + ' <b>' + v[1] + '</b></span>'; }).join('') + '</div></div>' +
+        '<div class="section"><div class="row between"><h2 class="h3">Work</h2><span class="caption num">' + m.work.length + ' projects</span></div><div class="work-grid">' +
+          m.work.map(function (w, i) { return '<figure>' + A.art(w.art, w.brand, 'work' + i) + '<figcaption><span class="pill pill-glass">' + esc(w.title) + '</span></figcaption></figure>'; }).join('') + '</div></div>' +
+        '<button class="row-link" data-act="employer"><span class="thumb" style="background:var(--mint-tint);display:flex;align-items:center;justify-content:center;color:var(--mint-text)"><span class="ico" style="width:24px;height:24px">' + I.eye + '</span></span>' +
+          '<span class="grow"><span class="h4" style="display:block">See the employer view</span><span class="caption">How your applications look to a recruiter</span></span>' + I.chev + '</button>' +
+        '<button class="link muted" data-act="reset" style="align-self:center">Reset demo</button>' +
       '</div></div></section>' + tabbar('profile');
   }
 
   /* ---------- Employer preview ---------- */
-  function employerView() {
-    var list = S.appliedList();
-    var job = list.length ? list[0].job : D.job('j01');
-    var c = D.company(job.companyId);
-    var mine = S.get().applied[job.id];
+  function employerView(ui) {
+    var apps = S.appliedList();
+    var job = apps.length ? apps[0].job : D.job('j01');
+    var c = co(job), mine = S.get().applied[job.id];
     var people = D.applicants.slice();
-    if (mine) people.push({ initials: D.me.initials, name: D.me.name + ' (you)', role: D.me.role + ' · ' + D.me.location, match: job.match, standout: mine.standout, msg: mine.msg, me: true });
+    if (mine) people.push({ initials: D.me.initials, name: D.me.name, role: D.me.role + ' · ' + D.me.location, match: job.match, standout: mine.standout, msg: mine.msg, me: true });
     var standouts = people.filter(function (p) { return p.standout; }).sort(function (a, b) { return (b.me ? 1 : 0) - (a.me ? 1 : 0) || b.match - a.match; });
     var rest = people.filter(function (p) { return !p.standout; }).sort(function (a, b) { return b.match - a.match; });
-
     function row(p, gold) {
+      var you = p.me ? ' <span class="pill pill-mint">You</span>' : '';
       if (gold) {
-        return '<div class="panel standout-card stack gap-8"><div class="row gap-10" style="display:flex"><span class="avatar" style="background:#FFF6DB;color:#6B4500">' + esc(p.initials) + '</span>' +
-          '<div style="flex:1;min-width:0"><p class="h3" style="font-size:15px">' + esc(p.name) + '</p><p class="caption">' + esc(p.role) + '</p></div><span class="label mint num">' + p.match + '%</span></div>' +
-          '<p class="body" style="font-size:14px;line-height:20px">' + esc(p.msg || '') + '</p></div>';
+        return '<div class="app-card standout"><span class="row g10"><span class="avatar" style="background:var(--gold-tint);color:var(--gold-deep)">' + esc(p.initials) + '</span>' +
+          '<span class="grow"><span class="h4 row g6">' + esc(p.name) + you + '</span><span class="caption">' + esc(p.role) + '</span></span><span class="h4 mint num">' + p.match + '%</span></span>' +
+          '<span class="msg-quote">“' + esc(p.msg || '') + '”</span>' +
+          '<span class="row g8"><span class="btn btn-ink btn-xs">View profile</span><span class="btn btn-ghost btn-xs">Reply</span></span></div>';
       }
-      return '<div class="row gap-10" style="display:flex;padding:8px 0;border-bottom:1px solid #E6E6E3' + (p.me ? ';background:#ECFBF5;margin:0 -8px;padding:8px;border-radius:10px' : '') + '"><span class="avatar" style="background:#EDEDEA">' + esc(p.initials) + '</span>' +
-        '<div style="flex:1;min-width:0"><p class="h3" style="font-size:15px">' + esc(p.name) + '</p><p class="caption">' + esc(p.role) + '</p></div><span class="label mint num">' + p.match + '%</span></div>';
+      return '<div class="row-link"><span class="avatar" style="background:var(--chip);color:var(--ink)">' + esc(p.initials) + '</span>' +
+        '<span class="grow"><span class="h4 row g6">' + esc(p.name) + you + '</span><span class="caption">' + esc(p.role) + '</span></span><span class="label mint num">' + p.match + '%</span></div>';
     }
-
-    return '<section class="view" aria-label="Employer view"><div class="pad top-space" style="background:#fff;border-bottom:1px solid #E6E6E3;padding-bottom:12px">' +
-      '<div class="backbar"><button class="icon-btn" data-act="back" aria-label="Back">' + I.back + '</button><p class="caption" style="font-weight:500">' + esc(c.name) + ' · Recruiter view</p></div>' +
-      '<h1 class="h1" style="margin-top:10px">' + esc(job.title) + '</h1><p class="label mint num" style="margin-top:4px">' + (job.applicants + (mine ? 1 : 0)) + ' applicants · Standouts pinned first</p></div>' +
-      '<div class="scroll"><div class="pad stack gap-10" style="padding-top:16px;padding-bottom:24px">' +
-        (mine ? '' : '<p class="caption">You haven’t applied to anything yet, so this shows a sample role. Apply or send a Standout and come back.</p>') +
-        '<p class="label gold row gap-6" style="display:flex"><span style="width:14px;height:14px;display:inline-flex">' + I.star + '</span>Standouts · ' + standouts.length + '</p>' +
-        standouts.map(function (p) { return row(p, true); }).join('') +
-        '<p class="label muted" style="margin-top:8px">Everyone else</p>' +
-        rest.map(function (p) { return row(p, false); }).join('') +
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="Employer view"><div class="scroll"><div class="pad top-space col g16" style="padding-bottom:30px">' +
+      '<div class="row g10"><button class="icon-btn" data-act="back" aria-label="Back">' + I.back + '</button><span class="pill pill-dark">Recruiter view</span></div>' +
+      '<div class="row g12">' + A.mark(c, 48) + '<div class="grow"><p class="caption">' + esc(c.name) + '</p><h1 class="h2">' + esc(job.title) + '</h1></div></div>' +
+      '<div class="stats num"><div><b>' + (job.applicants + (mine ? 1 : 0)) + '</b><span class="caption">applicants</span></div><div><b>' + standouts.length + '</b><span class="caption">Standouts</span></div><div><b>' + esc(job.closes) + '</b><span class="caption">closes</span></div></div>' +
+      (mine ? '' : '<p class="small muted">You haven’t applied to anything yet, so this shows a sample role. Apply or send a Standout, then come back.</p>') +
+      '<p class="eyebrow row g4" style="color:var(--gold-text)">' + ico(I.star, 'ico-sm') + 'Standouts, pinned first</p>' + standouts.map(function (p) { return row(p, true); }).join('') +
+      '<p class="eyebrow" style="margin-top:6px">Everyone else, by match</p>' + rest.map(function (p) { return row(p, false); }).join('') +
       '</div></div></section>';
   }
 
   /* ---------- Standout sheet ---------- */
-  function standoutSheet(job, ui) {
-    var c = D.company(job.companyId);
-    var left = S.get().standoutsLeft;
-    var inner;
-    if (ui.sent) {
-      inner = '<div class="stack gap-12" style="align-items:center;text-align:center;padding:12px 0 4px">' +
-        '<span class="star-badge" style="width:72px;height:72px;border-radius:36px"><span style="width:34px;height:34px;display:inline-flex">' + I.star + '</span></span>' +
-        '<h2 class="h1">You stood out</h2><p class="body">' + esc(c.name) + ' will see your application first. We’ll let you know when they reply.</p>' +
-        '<button class="btn btn-mint btn-block" data-act="close-sheet-home">Back to Discover</button></div>';
+  function standoutSheet(job, sh) {
+    var c = co(job), left = S.get().standoutsLeft, inner;
+    if (sh.sent) {
+      var sparks = '';
+      for (var i = 0; i < 10; i++) sparks += '<i style="--a:' + (i * 36) + 'deg;animation-delay:' + (0.1 + (i % 3) * 0.04) + 's;background:' + (i % 2 ? 'var(--gold)' : 'var(--mint)') + '"></i>';
+      inner = '<div class="col g12" style="align-items:center;text-align:center;padding:8px 0 4px">' +
+        '<div class="burst">' + sparks + '<span class="core">' + I.star + '</span></div>' +
+        '<h2 class="h1">You stood out</h2><p class="body">' + esc(c.name) + ' will see your application before anyone else’s. We’ll tell you the moment they reply.</p>' +
+        '<button class="btn btn-ink btn-block" data-act="close-sheet-home">Keep swiping</button>' +
+        '<button class="link" data-act="go-applied">See your applications</button></div>';
     } else if (left <= 0) {
-      inner = '<div class="stack gap-12" style="align-items:center;text-align:center;padding:12px 0 4px">' +
-        '<span class="star-badge" style="background:#EDEDEA">' + I.star + '</span>' +
-        '<h2 class="h2">You’re out of Standouts</h2><p class="body">Standouts refill every Monday, so each one stays special. You can still apply normally.</p>' +
+      inner = '<div class="col g12" style="align-items:center;text-align:center;padding:8px 0 4px"><span class="star-hero" style="background:var(--chip)">' + I.star + '</span>' +
+        '<h2 class="h2">You’re out of Standouts</h2><p class="body">They refill every Monday, which keeps each one special. You can still apply normally once you’ve read the listing.</p>' +
         '<button class="btn btn-ghost btn-block" data-act="close-sheet">Got it</button></div>';
     } else {
-      inner = '<div class="row gap-12" style="display:flex"><span class="star-badge">' + I.star + '</span>' +
-          '<div><h2 class="h2">Send a Standout</h2><p class="caption">' + esc(job.title) + ' · ' + esc(c.name) + '</p></div></div>' +
-        '<p class="body">Your application goes to the top of their list, with a message straight to the hiring manager. No need to finish the listing first.</p>' +
-        '<div class="field"><label class="label" for="so-msg">Why you, in a few lines</label>' +
-          '<textarea id="so-msg" rows="4" maxlength="300" placeholder="I’ve been designing labels for a local brewery and love how you approach small-batch brands…">' + esc(ui.msg || '') + '</textarea>' +
-          '<div class="row between" style="display:flex"><span id="so-err" class="' + (ui.error ? 'error' : 'caption') + '">' + (ui.error ? 'Write a short message first' : 'Shown alongside your profile') + '</span><span id="so-count" class="caption num">' + (ui.msg || '').length + '/300</span></div></div>' +
-        '<div class="row between" style="display:flex;background:#FFF6DB;border-radius:14px;padding:12px 14px"><span class="label" style="color:#6B4500">' + left + ' of ' + S.STANDOUTS_PER_WEEK + ' Standouts left this week</span></div>' +
+      var slots = '';
+      for (var k = 0; k < S.STANDOUTS_PER_WEEK; k++) slots += '<span class="' + (k < left ? '' : 'used') + '">' + I.star + '</span>';
+      inner = '<div class="row g14"><span class="star-hero">' + I.star + '</span><div class="grow"><h2 class="h2">Send a Standout</h2><p class="caption ellipsis">' + esc(job.title) + ' · ' + esc(c.name) + '</p></div></div>' +
+        '<p class="body">Skip the queue: your application lands at the top of their list, with a note straight to ' + esc(c.team[0][0].split(' ')[0]) + ', their ' + esc(c.team[0][1].toLowerCase()) + '.</p>' +
+        '<div class="field"><label class="h4" for="so-msg">Why you, in a few lines</label>' +
+          '<div class="prompts" role="group" aria-label="Ideas"><button data-act="prompt" data-id="0">Mention a project</button><button data-act="prompt" data-id="1">Why this studio</button><button data-act="prompt" data-id="2">When you can start</button></div>' +
+          '<textarea id="so-msg" rows="4" maxlength="300" placeholder="I’ve been designing labels for a local brewery and love how you approach small-batch brands…">' + esc(sh.msg || '') + '</textarea>' +
+          '<div class="row between"><span id="so-err" class="' + (sh.error ? 'error' : 'caption') + '">' + (sh.error ? 'Write a short message first' : 'Sent with your profile and work') + '</span><span id="so-count" class="caption num">' + (sh.msg || '').length + '/300</span></div></div>' +
+        '<div class="row g12" style="background:var(--gold-tint);border-radius:18px;padding:12px 14px"><div class="star-slots">' + slots + '</div><span class="label" style="color:var(--gold-deep)">' + left + ' of ' + S.STANDOUTS_PER_WEEK + ' left this week</span></div>' +
         '<button class="btn btn-gold btn-block" data-act="send-standout" data-id="' + job.id + '">' + I.star + 'Send Standout</button>' +
-        '<button class="link-btn" data-act="close-sheet">Not now</button>';
+        '<button class="link muted" data-act="close-sheet" style="align-self:center">Not now</button>';
     }
     return '<div class="scrim" data-act="close-sheet"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Send a Standout"><div class="grabber"></div>' + inner + '</div>';
   }

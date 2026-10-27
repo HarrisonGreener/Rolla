@@ -29,6 +29,18 @@
     briefcase: s('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7 V5 H15 V7 M3 13 H21"/>'),
     undo: s('<path d="M9 14 L4 9 L9 4"/><path d="M4 9 H14 a6 6 0 0 1 0 12 H11"/>'),
     eye: s('<path d="M2 12 S6 5 12 5 S22 12 22 12 S18 19 12 19 S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>'),
+    bookmark: s('<path d="M6 4 H18 V21 L12 16.5 L6 21Z"/>'),
+    bookmarkFill: s('<path d="M6 4 H18 V21 L12 16.5 L6 21Z"/>', { fill: 'currentColor' }),
+    sparkle: s('<path d="M12 3 L13.8 9.2 L20 11 L13.8 12.8 L12 19 L10.2 12.8 L4 11 L10.2 9.2Z"/>', { fill: 'currentColor', stroke: 'none' }),
+    users: s('<circle cx="9" cy="9" r="3.5"/><path d="M2.5 20 c0.8-3.5 3.4-5 6.5-5 s5.7 1.5 6.5 5"/><circle cx="17" cy="8" r="2.8"/><path d="M17 13.5 c2.3 0 4 1.3 4.6 4"/>'),
+    clock: s('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5 V12 L15 14"/>'),
+    pound: s('<path d="M16 6.5 a3.8 3.8 0 0 0 -7 2 V19 M6 19 H17 M6.5 13 H13"/>'),
+    laptop: s('<rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19 H22"/>'),
+    verified: s('<path d="M12 2.8 L14.4 4.6 L17.4 4.4 L18.3 7.3 L20.8 9 L19.8 11.9 L20.8 14.8 L18.3 16.5 L17.4 19.4 L14.4 19.2 L12 21 L9.6 19.2 L6.6 19.4 L5.7 16.5 L3.2 14.8 L4.2 11.9 L3.2 9 L5.7 7.3 L6.6 4.4 L9.6 4.6Z" fill="currentColor" stroke="none"/><path d="M8.5 12 L11 14.5 L15.5 9.8" stroke="#fff" stroke-width="2"/>'),
+    arrowUR: s('<path d="M7 17 L17 7 M9 7 H17 V15"/>'),
+    bell: s('<path d="M6 16 V11 a6 6 0 0 1 12 0 V16 L19.5 18 H4.5Z M10 20.5 a2 2 0 0 0 4 0"/>'),
+    plus: s('<path d="M12 5 V19 M5 12 H19"/>', { sw: 2.4 }),
+    calendar: s('<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10 H20 M8.5 3.5 V7 M15.5 3.5 V7"/>'),
   };
 
   function fan(fill) {

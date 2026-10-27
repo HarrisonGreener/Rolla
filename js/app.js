@@ -4,29 +4,29 @@
   var app = document.getElementById('app');
 
   var stack = [{ v: 'tab', tab: 'discover' }];
-  var sheet = null;          // { jobId, msg, error, sent }
+  var sheet = null;            // { jobId, msg, error, sent }
+  var ui = { enter: '', arrive: false, appliedTab: 'applied' };
   var lastKey = '';
   var toastTimer = null;
 
   function top() { return stack[stack.length - 1]; }
-  function keyOf(view) { return JSON.stringify(view); }
 
   /* ---------- Rendering ---------- */
-  function render() {
+  function render(enter) {
     var view = top();
-    var key = keyOf(view);
+    var key = JSON.stringify(view);
     var scroller = app.querySelector('.scroll');
     var keepScroll = key === lastKey && scroller ? scroller.scrollTop : 0;
+    ui.enter = enter || '';
 
     var html;
-    if (view.v === 'job') html = V.jobView(D.job(view.id));
-    else if (view.v === 'company') html = V.companyView(D.company(view.id));
-    else if (view.v === 'employer') html = V.employerView();
-    else if (view.tab === 'feed') html = V.feed();
-    else if (view.tab === 'applied') html = V.appliedView();
-    else if (view.tab === 'profile') html = V.profileView();
-    else html = V.discover();
-
+    if (view.v === 'job') html = V.jobView(D.job(view.id), ui);
+    else if (view.v === 'company') html = V.companyView(D.company(view.id), ui);
+    else if (view.v === 'employer') html = V.employerView(ui);
+    else if (view.tab === 'feed') html = V.feed(ui);
+    else if (view.tab === 'applied') html = V.appliedView(ui);
+    else if (view.tab === 'profile') html = V.profileView(ui);
+    else html = V.discover(ui);
     if (sheet) html += V.standoutSheet(D.job(sheet.jobId), sheet);
 
     // Keep the splash and any visible toast across re-renders.
@@ -39,17 +39,18 @@
     var newScroller = app.querySelector('.scroll');
     if (newScroller && keepScroll) newScroller.scrollTop = keepScroll;
     lastKey = key;
+    ui.arrive = false;
+
+    // Keep the selected discipline chip in view.
+    var chip = app.querySelector('.chip[aria-pressed="true"]');
+    if (chip && chip.parentNode) chip.parentNode.scrollLeft = Math.max(0, chip.offsetLeft - chip.parentNode.offsetLeft - 60);
 
     if (view.v === 'job') watchReading(view.id);
-    if (sheet && !sheet.sent) {
-      var ta = document.getElementById('so-msg');
-      if (ta && sheet.focus) { ta.focus(); sheet.focus = false; }
-    }
   }
 
-  function go(view) { stack.push(view); sheet = null; render(); }
-  function back() { if (stack.length > 1) stack.pop(); sheet = null; render(); }
-  function home(tab) { stack = [{ v: 'tab', tab: tab || 'discover' }]; sheet = null; render(); }
+  function go(view) { stack.push(view); sheet = null; render('enter-push'); }
+  function back() { if (stack.length > 1) stack.pop(); sheet = null; render('enter-pop'); }
+  function home(tab) { stack = [{ v: 'tab', tab: tab || 'discover' }]; sheet = null; render('enter-fade'); }
 
   /* ---------- Toasts ---------- */
   function toast(text, opts) {
@@ -61,38 +62,29 @@
     el.className = 'toast';
     el.setAttribute('role', 'status');
     el.innerHTML = (opts.icon || '') + '<span style="flex:1">' + V.esc(text) + '</span>' +
-      (opts.action ? '<button class="link-btn" style="color:#7EE8C3;padding:4px" data-act="' + opts.action + '" data-id="' + (opts.id || '') + '">' + opts.actionLabel + '</button>' : '');
+      (opts.action ? '<button class="act" data-act="' + opts.action + '" data-id="' + (opts.id || '') + '">' + opts.actionLabel + '</button>' : '');
     app.appendChild(el);
-    toastTimer = setTimeout(function () { if (el.parentNode) el.remove(); }, opts.long ? 4000 : 2600);
+    toastTimer = setTimeout(function () { if (el.parentNode) el.remove(); }, opts.long ? 4200 : 2800);
   }
-  function starIcon() { return '<span style="color:#FFC94D;display:inline-flex">' + I.star + '</span>'; }
-  function checkIcon() { return '<span style="color:#7EE8C3;display:inline-flex">' + I.check + '</span>'; }
+  function tint(svg, color) { return '<span style="color:' + color + ';display:inline-flex">' + svg + '</span>'; }
 
-  /* ---------- Reading progress: Apply unlocks at the end of the listing ---------- */
+  /* ---------- Reading progress: the Apply button fills as you read ---------- */
   function watchReading(jobId) {
     var sc = document.getElementById('job-scroll');
-    if (!sc) return;
+    var btn = document.getElementById('apply-btn');
+    if (!sc || !btn || S.isRead(jobId)) return;
     function check() {
+      if (S.isRead(jobId) || !sc.isConnected) return;
       var max = sc.scrollHeight - sc.clientHeight;
       var p = max <= 4 ? 1 : Math.min(1, sc.scrollTop / max);
-      var already = S.isRead(jobId);
-      var bar = document.getElementById('read-bar');
-      if (bar && !already) {
-        bar.style.width = Math.round(p * 100) + '%';
-        bar.parentNode.setAttribute('aria-valuenow', Math.round(p * 100));
-      }
-      if (!already && p >= 0.97) {
+      btn.style.setProperty('--p', Math.round(p * 100) + '%');
+      if (p >= 0.97) {
         S.markRead(jobId);
-        if (bar) { bar.style.width = '100%'; bar.parentNode.setAttribute('aria-valuenow', 100); }
-        var label = document.getElementById('read-label');
-        if (label) { label.textContent = 'Apply unlocked'; label.style.color = '#0E7052'; }
-        var btn = document.getElementById('apply-btn');
-        if (btn) {
-          btn.className = 'btn grow btn-mint';
-          btn.setAttribute('data-act', 'apply-job');
-          btn.innerHTML = 'Apply';
-        }
-        toast('Apply unlocked', { icon: checkIcon() });
+        btn.classList.add('ready');
+        btn.setAttribute('data-act', 'apply-job');
+        var label = btn.querySelector('#apply-label');
+        if (label) label.innerHTML = I.check + 'Apply';
+        toast('Apply unlocked. Nice, you read the lot.', { icon: tint(I.check, '#7EE8C3') });
       }
     }
     sc.addEventListener('scroll', check, { passive: true });
@@ -105,61 +97,98 @@
   function doPass(id, fromDeck) {
     var j = D.job(id);
     S.pass(id);
+    ui.arrive = fromDeck;
+    if (fromDeck) render(); else back();
     toast('Passed on ' + j.title, { action: 'undo-pass', id: id, actionLabel: 'Undo' });
-    if (!fromDeck) back(); else render();
   }
   function doApply(id, fromDeck) {
-    var j = D.job(id), c = D.company(j.companyId);
+    var j = D.job(id), c = D.company(j.co);
     S.apply(id);
-    if (!fromDeck) back(); else render();
-    toast('Applied to ' + j.title + ' at ' + c.name, { icon: checkIcon() });
+    ui.arrive = fromDeck;
+    if (fromDeck) render(); else back();
+    toast('Applied to ' + c.name, { icon: tint(I.check, '#7EE8C3'), action: 'tab', id: 'applied', actionLabel: 'View' });
   }
 
   function flyOut(dir, then) {
     var card = app.querySelector('.card.top');
     if (!card) { then(); return; }
-    card.style.transition = 'transform 0.28s ease-in, opacity 0.28s ease-in';
-    card.style.transform = 'translate(' + (dir * 480) + 'px, 30px) rotate(' + (dir * 24) + 'deg)';
+    card.classList.add('dragging');
+    card.style.transition = 'transform 0.32s cubic-bezier(.4,0,.6,1), opacity 0.32s';
+    card.style.transform = 'translate(' + (dir * 520) + 'px, 40px) rotate(' + (dir * 26) + 'deg)';
     card.style.opacity = '0';
-    setTimeout(then, 240);
+    var next = app.querySelector('.card.back-1');
+    if (next) { next.style.transition = 'transform 0.32s ease'; next.style.transform = 'none'; }
+    setTimeout(then, 260);
   }
+
+  function share() {
+    var done = function () { toast('Link copied', { icon: tint(I.check, '#7EE8C3') }); };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(location.href.split('#')[0]).then(done, function () { toast('Sharing is coming soon in this prototype'); });
+        return;
+      }
+    } catch (e) { /* fall through */ }
+    toast('Sharing is coming soon in this prototype');
+  }
+
+  var PROMPTS = [
+    'I recently designed labels for Moss Side Brewing, from first sketches to the final print run.',
+    'I’ve followed {co}’s work for a while and would love to learn from your team.',
+    'I can start in two weeks and I’m happy to come in for a chat any time.',
+  ];
 
   var actions = {
     tab: function (id) { home(id); },
     back: back,
-    filter: function (id) { S.setFilter(id); render(); },
+    filter: function (id) { S.setFilter(id); ui.arrive = true; render(); },
     job: function (id) { go({ v: 'job', id: id }); },
-    company: function (id) { go({ v: 'company', id: id }); },
+    company: function (id) { if (top().v === 'company' && top().id === id) return; go({ v: 'company', id: id }); },
     employer: function () { go({ v: 'employer' }); },
+    share: share,
+    compose: function () { toast('Posting and editing are coming soon in this prototype'); },
+    person: function (id) { var p = D.person(id); toast(p.name + '’s full profile is coming soon in this prototype'); },
+    'applied-tab': function (id) { ui.appliedTab = id; render(); },
+    'go-applied': function () { ui.appliedTab = 'applied'; home('applied'); },
 
     pass: function () { var id = topJobId(); if (id) flyOut(-1, function () { doPass(id, true); }); },
     apply: function () { var id = topJobId(); if (id) flyOut(1, function () { doApply(id, true); }); },
     'apply-locked': function (id) {
       var jid = id || topJobId();
-      if (top().v !== 'job' && jid) { go({ v: 'job', id: jid }); }
-      toast('Read the full listing to unlock Apply', { icon: '<span style="display:inline-flex;color:#B5B5B2">' + I.lock + '</span>' });
+      if (top().v !== 'job' && jid) go({ v: 'job', id: jid });
+      toast('Scroll to the end of the listing to unlock Apply', { icon: tint(I.lock, '#B5B5B2') });
     },
     'pass-job': function (id) { doPass(id, false); },
     'apply-job': function (id) { doApply(id, false); },
-    'undo-pass': function (id) {
-      var st = S.get();
-      st.passed = st.passed.filter(function (x) { return x !== id; });
-      S.save(); render();
-    },
+    'undo-pass': function (id) { S.unpass(id); ui.arrive = true; render(); var t = app.querySelector('.toast'); if (t) t.remove(); },
     withdraw: function (id) { S.withdraw(id); render(); toast('Application withdrawn'); },
-    unpass: function () { var n = S.get().passed.length; S.unpassAll(); render(); toast(n + ' passed job' + (n === 1 ? '' : 's') + ' back in your deck'); },
+    unpass: function () { var n = S.get().passed.length; S.unpassAll(); ui.arrive = true; render(); toast(n + ' passed role' + (n === 1 ? ' is' : 's are') + ' back in your deck'); },
+    save: function (id) {
+      S.toggleSave(id); render();
+      if (S.isSaved(id)) toast('Saved for later', { icon: tint(I.bookmarkFill, '#7EE8C3'), action: 'go-saved', actionLabel: 'View' });
+    },
+    'go-saved': function () { ui.appliedTab = 'saved'; home('applied'); },
 
     standout: function (id) {
       var jid = id || topJobId();
       if (!jid) return;
-      sheet = { jobId: jid, msg: '', error: false, sent: false, focus: true };
+      sheet = { jobId: jid, msg: '', error: false, sent: false };
       render();
+    },
+    prompt: function (i) {
+      var ta = document.getElementById('so-msg');
+      if (!ta || !sheet) return;
+      var c = D.company(D.job(sheet.jobId).co);
+      var add = PROMPTS[+i].replace('{co}', c.name);
+      ta.value = (ta.value.trim() ? ta.value.trim() + ' ' : '') + add;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+      ta.focus();
     },
     'send-standout': function (id) {
       var ta = document.getElementById('so-msg');
       var msg = ta ? ta.value.trim() : '';
       if (!msg) {
-        sheet.error = true; sheet.msg = ta ? ta.value : '';
+        sheet.error = true;
         var err = document.getElementById('so-err');
         if (err) { err.className = 'error'; err.textContent = 'Write a short message first'; }
         if (ta) ta.focus();
@@ -172,41 +201,39 @@
       sheet = null;
       if (wasSent && top().v === 'job') back(); else render();
     },
-    'close-sheet-home': function () { home('discover'); },
+    'close-sheet-home': function () { ui.arrive = true; home('discover'); },
 
     shortlist: function (id) {
       S.toggleShortlist(id); render();
       var c = D.company(id);
-      toast(S.isShortlisted(id) ? c.name + ' shortlisted. Their jobs now come first.' : c.name + ' removed from your shortlist');
+      toast(S.isShortlisted(id) ? c.name + ' shortlisted. Their roles now come first.' : c.name + ' removed from your shortlist', { icon: S.isShortlisted(id) ? tint(I.check, '#7EE8C3') : '' });
     },
     like: function (id) { S.toggleLike(id); render(); },
     acq: function (id) {
       S.toggleAcquaintance(id); render();
-      var p = D.people.filter(function (x) { return x.id === id; })[0];
-      if (S.get().acquaintances.indexOf(id) !== -1) toast('Added ' + p.name + ' as an acquaintance. If they add you back, you’re associates.', { long: true });
+      var p = D.person(id);
+      if (S.get().acquaintances.indexOf(id) !== -1) toast('You added ' + p.name.split(' ')[0] + '. If they add you back, you’re associates.', { long: true });
     },
-    reset: function () { S.reset(); home('discover'); toast('Demo reset. All 30 jobs are back.'); },
+    reset: function () { S.reset(); ui.appliedTab = 'applied'; home('discover'); toast('Demo reset. All 30 roles are back.'); },
     'skip-splash': hideSplash,
   };
 
   app.addEventListener('click', function (e) {
     var el = e.target.closest('[data-act]');
     if (!el || !app.contains(el)) return;
-    if (el.classList.contains('card')) return; // cards are handled by the drag code
     var fn = actions[el.getAttribute('data-act')];
     if (fn) { e.preventDefault(); fn(el.getAttribute('data-id')); }
   });
 
   app.addEventListener('input', function (e) {
-    if (e.target.id === 'so-msg' && sheet) {
-      sheet.msg = e.target.value;
-      var cnt = document.getElementById('so-count');
-      if (cnt) cnt.textContent = e.target.value.length + '/300';
-      if (sheet.error && e.target.value.trim()) {
-        sheet.error = false;
-        var err = document.getElementById('so-err');
-        if (err) { err.className = 'caption'; err.textContent = 'Shown alongside your profile'; }
-      }
+    if (e.target.id !== 'so-msg' || !sheet) return;
+    sheet.msg = e.target.value;
+    var cnt = document.getElementById('so-count');
+    if (cnt) cnt.textContent = e.target.value.length + '/300';
+    if (sheet.error && e.target.value.trim()) {
+      sheet.error = false;
+      var err = document.getElementById('so-err');
+      if (err) { err.className = 'caption'; err.textContent = 'Sent with your profile and work'; }
     }
   });
 
@@ -216,8 +243,8 @@
 
   app.addEventListener('pointerdown', function (e) {
     var card = e.target.closest('.card.top');
-    if (!card || e.button > 0) return;
-    drag = { card: card, id: card.getAttribute('data-id'), x: e.clientX, y: e.clientY, dx: 0, dy: 0, moved: false, pid: e.pointerId };
+    if (!card || e.button > 0 || e.target.closest('button')) return;
+    drag = { card: card, next: app.querySelector('.card.back-1'), id: card.getAttribute('data-id'), x: e.clientX, y: e.clientY, dx: 0, dy: 0, moved: false, pid: e.pointerId };
     card.setPointerCapture(e.pointerId);
   });
 
@@ -227,12 +254,12 @@
     drag.dy = e.clientY - drag.y;
     if (!drag.moved && Math.abs(drag.dx) + Math.abs(drag.dy) > 6) { drag.moved = true; drag.card.classList.add('dragging'); }
     if (!drag.moved) return;
-    drag.card.style.transform = 'translate(' + drag.dx + 'px,' + (drag.dy * 0.25) + 'px) rotate(' + (drag.dx / 16) + 'deg)';
-    var pass = drag.card.querySelector('.stamp-pass');
-    var apply = drag.card.querySelector('.stamp-apply');
+    drag.card.style.transform = 'translate(' + drag.dx + 'px,' + (drag.dy * 0.2) + 'px) rotate(' + (drag.dx / 18) + 'deg)';
+    var k = Math.min(1, Math.abs(drag.dx) / THRESHOLD);
+    if (drag.next) { drag.next.style.transition = 'none'; drag.next.style.transform = 'translateY(' + (12 - 12 * k) + 'px) scale(' + (0.955 + 0.045 * k) + ')'; }
+    var pass = drag.card.querySelector('.stamp-pass'), apply = drag.card.querySelector('.stamp-apply');
     var read = S.isRead(drag.id);
-    apply.textContent = read ? 'APPLY' : 'READ FIRST';
-    apply.style.color = apply.style.borderColor = read ? '#0E7052' : '#5F5F5C';
+    if (!read && !apply.classList.contains('locked')) { apply.classList.add('locked'); apply.innerHTML = I.lock + 'READ FIRST'; }
     pass.style.opacity = Math.max(0, Math.min(1, -drag.dx / THRESHOLD));
     apply.style.opacity = Math.max(0, Math.min(1, drag.dx / THRESHOLD));
   });
@@ -240,19 +267,21 @@
   function endDrag(e) {
     if (!drag || (e && e.pointerId !== drag.pid)) return;
     var d = drag; drag = null;
-    d.card.classList.remove('dragging');
-    if (!d.moved) { go({ v: 'job', id: d.id }); return; }
+    if (!d.moved) { d.card.classList.remove('dragging'); go({ v: 'job', id: d.id }); return; }
     if (d.dx < -THRESHOLD) { flyOut(-1, function () { doPass(d.id, true); }); return; }
     if (d.dx > THRESHOLD && S.isRead(d.id)) { flyOut(1, function () { doApply(d.id, true); }); return; }
+    d.card.classList.remove('dragging');
     d.card.style.transform = '';
+    if (d.next) { d.next.style.transition = ''; d.next.style.transform = ''; }
     d.card.querySelector('.stamp-pass').style.opacity = 0;
     d.card.querySelector('.stamp-apply').style.opacity = 0;
-    if (d.dx > THRESHOLD) toast('Read the full listing first. Tap the card to open it.', { icon: '<span style="display:inline-flex;color:#B5B5B2">' + I.lock + '</span>' });
+    if (d.dx > THRESHOLD) toast('Read the full listing first. Tap the card to open it.', { icon: tint(I.lock, '#B5B5B2') });
   }
   app.addEventListener('pointerup', endDrag);
   app.addEventListener('pointercancel', endDrag);
 
   app.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && sheet) { actions['close-sheet'](); return; }
     var card = e.target.closest && e.target.closest('.card.top');
     if (!card) return;
     var id = card.getAttribute('data-id');
@@ -266,10 +295,13 @@
     var el = document.getElementById('splash');
     if (!el || el.classList.contains('out')) return;
     el.classList.add('out');
-    setTimeout(function () { if (el.parentNode) el.remove(); }, 450);
+    setTimeout(function () { if (el.parentNode) el.remove(); }, 480);
   }
+
+  // Application statuses move along over time, so refresh the Applied tab while it's open.
+  setInterval(function () { if (!sheet && top().tab === 'applied' && !drag) render(); }, 5000);
 
   render();
   app.insertAdjacentHTML('beforeend', V.splash());
-  setTimeout(hideSplash, 3600);
+  setTimeout(hideSplash, 3500);
 })();
