@@ -378,7 +378,7 @@
     for (var i = 0; i < S.STANDOUTS_PER_WEEK; i++) slots += '<span class="' + (i < st.standoutsLeft ? '' : 'used') + '">' + I.star + '</span>';
     return '<section class="view ' + (ui.enter || '') + '" aria-label="Your profile"><div class="scroll">' +
       '<div class="banner">' + A.art(w0.art, w0.brand, 'banner') +
-        '<div class="hero-bar" style="position:absolute;top:max(14px, env(safe-area-inset-top));left:16px;right:16px;display:flex;justify-content:space-between">' + '<span class="pill pill-glass" style="padding:6px 12px">' + B.logo(18, 16) + '</span>' +
+        '<div class="hero-bar" style="position:absolute;top:max(14px, env(safe-area-inset-top));left:16px;right:16px;display:flex;justify-content:space-between">' + '<span></span>' +
         '<button class="icon-btn" data-act="share" aria-label="Share profile">' + I.share + '</button></div></div>' +
       '<div class="pad col g20 tab-space" style="margin-top:-48px;position:relative">' +
         '<div class="row between" style="align-items:flex-end"><span class="me-avatar">' + esc(m.initials) + '</span>' +
