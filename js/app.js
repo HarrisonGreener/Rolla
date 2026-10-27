@@ -23,6 +23,7 @@
     if (view.v === 'job') html = V.jobView(D.job(view.id), ui);
     else if (view.v === 'company') html = V.companyView(D.company(view.id), ui);
     else if (view.v === 'employer') html = V.employerView(ui);
+    else if (view.v === 'person') html = V.personView(D.person(view.id), ui);
     else if (view.tab === 'feed') html = V.feed(ui);
     else if (view.tab === 'applied') html = V.appliedView(ui);
     else if (view.tab === 'profile') html = V.profileView(ui);
@@ -145,7 +146,10 @@
   ];
 
   var actions = {
-    tab: function (id) { home(id); },
+    tab: function (id) {
+      home(id);
+      if (id === 'discover') { var t = app.querySelector('.tab[data-id="discover"]'); if (t) { t.classList.add('spin'); setTimeout(function () { t.classList.remove('spin'); }, 1600); } }
+    },
     back: back,
     'open-filters': function () { sheet = { kind: 'filter' }; render(); },
     fsel: function (id) { var p = id.split('|'); S.setFilter(p[0], p[1]); ui.arrive = true; render(); },
@@ -155,7 +159,15 @@
     employer: function () { go({ v: 'employer' }); },
     share: share,
     compose: function () { toast('Posting and editing are coming soon in this prototype'); },
-    person: function (id) { var p = D.person(id); toast(p.name + '’s full profile is coming soon in this prototype'); },
+    person: function (id) { go({ v: 'person', id: id }); },
+    message: function (id) {
+      var p = D.person(id), on = S.get().acquaintances.indexOf(id) !== -1;
+      toast(on ? 'You can message ' + p.name.split(' ')[0] + ' once they add you back.' : 'Add ' + p.name.split(' ')[0] + ' first. Messaging opens when you\u2019re associates.', { long: true });
+    },
+    qfill: function (t) { ui.q = t; ui.qscope = 'all'; render(); },
+    qclear: function () { ui.q = ''; ui.qscope = 'all'; render(); var i = document.getElementById('net-q'); if (i) i.focus(); },
+    qscope: function (id) { ui.qscope = id; updateNet(); },
+    'replay-intro': function () { showSplash(); },
     'applied-tab': function (id) { ui.appliedTab = id; render(); },
     'go-applied': function () { ui.appliedTab = 'applied'; home('applied'); },
 
@@ -233,7 +245,19 @@
     if (fn) { e.preventDefault(); fn(el.getAttribute('data-id')); }
   });
 
+  function updateNet() {
+    var body = document.getElementById('net-body');
+    if (body) body.innerHTML = V.netBody(ui);
+    var label = app.querySelector('.search');
+    if (label) {
+      var clear = label.querySelector('.clear');
+      if (ui.q && !clear) label.insertAdjacentHTML('beforeend', '<button class="clear" data-act="qclear" aria-label="Clear search">' + I.x + '</button>');
+      if (!ui.q && clear) clear.remove();
+    }
+  }
+
   app.addEventListener('input', function (e) {
+    if (e.target.id === 'net-q') { ui.q = e.target.value; ui.qscope = 'all'; updateNet(); return; }
     if (e.target.id !== 'so-msg' || !sheet) return;
     sheet.msg = e.target.value;
     var cnt = document.getElementById('so-count');
@@ -244,6 +268,28 @@
       if (err) { err.className = 'caption'; err.textContent = 'Sent with your profile and work'; }
     }
   });
+
+  /* ---------- Drag to scroll horizontal rows with a mouse ---------- */
+  var rowDrag = null, suppressClick = false;
+  app.addEventListener('pointerdown', function (e) {
+    if (e.pointerType !== 'mouse' || e.button > 0) return;
+    var row = e.target.closest('.stories, .gallery, .team-row');
+    if (!row) return;
+    rowDrag = { row: row, x: e.clientX, left: row.scrollLeft, moved: false };
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!rowDrag) return;
+    var dx = e.clientX - rowDrag.x;
+    if (!rowDrag.moved && Math.abs(dx) > 5) { rowDrag.moved = true; rowDrag.row.classList.add('grabbing'); }
+    if (rowDrag.moved) rowDrag.row.scrollLeft = rowDrag.left - dx;
+  });
+  window.addEventListener('pointerup', function () {
+    if (!rowDrag) return;
+    if (rowDrag.moved) { suppressClick = true; setTimeout(function () { suppressClick = false; }, 0); }
+    rowDrag.row.classList.remove('grabbing');
+    rowDrag = null;
+  });
+  app.addEventListener('click', function (e) { if (suppressClick) { e.stopPropagation(); e.preventDefault(); suppressClick = false; } }, true);
 
   /* ---------- Swiping the top card ---------- */
   var drag = null;
@@ -290,6 +336,7 @@
 
   app.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && sheet) { actions['close-sheet'](); return; }
+    if (e.key === 'Escape' && e.target.id === 'net-q') { actions.qclear(); return; }
     var card = e.target.closest && e.target.closest('.card.top');
     if (!card) return;
     var id = card.getAttribute('data-id');
@@ -298,18 +345,34 @@
     else if (e.key === 'ArrowRight') { e.preventDefault(); S.isRead(id) ? actions.apply() : actions['apply-locked'](id); }
   });
 
-  /* ---------- Splash ---------- */
+  /* ---------- Loading screen ---------- */
+  var splashTimer = null;
   function hideSplash() {
     var el = document.getElementById('splash');
     if (!el || el.classList.contains('out')) return;
     el.classList.add('out');
     setTimeout(function () { if (el.parentNode) el.remove(); }, 480);
   }
+  function showSplash() {
+    var old = document.getElementById('splash');
+    if (old) old.remove();
+    clearTimeout(splashTimer);
+    app.insertAdjacentHTML('beforeend', V.splash());
+    splashTimer = setTimeout(hideSplash, 3900);
+  }
 
   // Application statuses move along over time, so refresh the Applied tab while it's open.
   setInterval(function () { if (!sheet && top().tab === 'applied' && !drag) render(); }, 5000);
 
   render();
-  app.insertAdjacentHTML('beforeend', V.splash());
-  setTimeout(hideSplash, 3900);
+  // Play the intro when the app is actually on screen, so it isn't missed in a background tab.
+  showSplash();
+  if (document.visibilityState === 'hidden') {
+    clearTimeout(splashTimer);
+    document.addEventListener('visibilitychange', function once() {
+      if (document.visibilityState !== 'visible') return;
+      document.removeEventListener('visibilitychange', once);
+      showSplash();
+    });
+  }
 })();

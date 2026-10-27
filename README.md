@@ -17,7 +17,7 @@ On a desktop browser it shows inside a phone frame. On a phone it fills the scre
 
 ## What works
 
-- **Splash animation**: the Rolodex mark turns, then the wordmark's second "l" swipes into place.
+- **Loading screen**: the Rolodex mark turns, the wordmark's second "l" swipes into place and a progress bar fills. It plays on every load (even with reduced motion turned on), replays when you tap the wordmark, and the Jobs tab icon spins on hover or tap.
 - **Swipe deck**: drag a card left to pass or right to apply, or use the buttons. Arrow keys work when a card is focused. Passes can be undone.
 - **Read to unlock**: Apply stays locked until you scroll to the end of a job listing, so every application is deliberate.
 - **Standouts**: three a week, shown in ink with a mint star. Each needs a short message and goes to the top of the employer's list.
@@ -25,7 +25,7 @@ On a desktop browser it shows inside a phone frame. On a phone it fills the scre
 - **Apply button that fills as you read**: scroll the listing and the button fills with mint, then unlocks.
 - **Save for later**: bookmark roles and find them under Applied → Saved.
 - **Company profiles**: brand-coloured studio pages with ethos, recent work, the team and open roles. Shortlisting a company moves its jobs to the front of your deck.
-- **Network**: stories, showcase posts, milestones and company posts, with likes, vouching and "Add as acquaintance".
+- **Network**: search across people, studios and jobs with All / People / Studios / Jobs results; swipeable stories (drag with a mouse on desktop); person profiles with skills and work; showcase posts, milestones and company posts, with likes, vouching and "Add as acquaintance".
 - **Applied**: everything you've applied to, with Standouts first and a status timeline (Sent, Viewed, Shortlisted, Interview) that moves along over a few minutes. Applications can be withdrawn.
 - **Profile**: an Instagram-style candidate profile with associates, acquaintances and vouched skills.
 - **Employer view**: see how your applications look to a recruiter, with Standouts pinned at the top.

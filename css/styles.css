@@ -104,6 +104,7 @@ svg { display: block; }
 /* ---------- Logo and marks ---------- */
 .logo { display: inline-flex; align-items: center; gap: 2px; }
 .wordmark { font-family: var(--display); font-weight: 800; line-height: 1; letter-spacing: -0.5px; }
+.replay { background: none; border: none; padding: 4px 0; color: var(--ink); }
 .wordmark svg { display: inline-block; width: 0.32em; height: 0.72em; vertical-align: 0; margin: 0 0.03em; overflow: visible; }
 .co-mark { display: inline-flex; align-items: center; justify-content: center; flex: none; box-shadow: inset 0 0 0 1px rgba(14, 14, 14, 0.06); }
 .avatar { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 800; font-size: 14px; flex: none; color: #fff; }
@@ -262,6 +263,9 @@ svg { display: block; }
 .tab { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px; border-radius: 22px; font-size: 11px; font-weight: 600; color: var(--muted); position: relative; transition: background 0.25s, color 0.25s; }
 .tab svg { width: 22px; height: 22px; }
 .tab[data-id="discover"] svg { width: 25px; height: 25px; margin-top: -2px; }
+.tab .ring { transform-box: view-box; transform-origin: 32px 32px; }
+@media (hover: hover) { .tab[data-id="discover"]:hover .ring { animation: spin 1.5s cubic-bezier(.12,.6,.18,1); } }
+.tab.spin .ring { animation: spin 1.5s cubic-bezier(.12,.6,.18,1); }
 .tab[aria-current="page"] { color: var(--ink); background: var(--mint-tint); }
 .tab[aria-current="page"]:not([data-id="discover"]) svg { color: var(--mint-text); }
 .tab .dot { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 17px; height: 17px; border-radius: 9px; background: var(--ink); color: #fff; font-size: 10px; line-height: 17px; padding: 0 4px; font-weight: 700; }
@@ -315,12 +319,27 @@ svg { display: block; }
 .big-quote { font-family: var(--display); font-weight: 700; font-size: 21px; line-height: 28px; letter-spacing: -0.3px; margin: 0; text-wrap: pretty; }
 
 /* ---------- Feed ---------- */
-.stories { display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; margin: 0 -20px; padding: 4px 20px 2px; }
+.stories { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; margin: 0 -20px; padding: 4px 20px 2px; scroll-snap-type: x proximity; scroll-padding: 0 20px; cursor: grab; }
+.stories.grabbing, .gallery.grabbing, .team-row.grabbing { cursor: grabbing; scroll-snap-type: none; }
 .stories::-webkit-scrollbar { display: none; }
-.story { flex: none; width: 66px; background: none; border: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--ink-2); }
-.story .ring { width: 64px; height: 64px; border-radius: 50%; padding: 3px; background: conic-gradient(from 200deg, var(--mint-mark), var(--mint), var(--mint-mark)); }
+.plain { background: none; border: none; padding: 0; text-align: left; color: inherit; display: flex; align-items: center; min-width: 0; }
+.search { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: 18px; padding: 0 8px 0 14px; height: 50px; box-shadow: var(--shadow-sm); }
+.search:focus-within { box-shadow: inset 0 0 0 2px var(--ink), var(--shadow-sm); }
+.search .ico { color: var(--muted); }
+.search input { flex: 1; min-width: 0; border: none; background: transparent; font-size: 16px; outline: none; height: 100%; }
+.search input::-webkit-search-cancel-button { display: none; }
+.search .clear { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--chip); display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+.search .clear svg { width: 14px; height: 14px; }
+.segmented.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.segmented.four button { padding: 9px 4px; font-size: 13px; }
+.story { flex: none; width: 72px; scroll-snap-align: start; background: none; border: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--ink-2); }
+.story .ring { display: block; position: relative; width: 68px; height: 68px; border-radius: 50%; padding: 3px; background: conic-gradient(from 200deg, var(--mint-mark), var(--mint), var(--mint-mark)); }
 .story .ring.seen { background: var(--line); }
-.story .inner { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--bg); overflow: hidden; }
+.story .inner { display: block; width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--bg); overflow: hidden; position: relative; }
+.story .inner .art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.story .plus { position: absolute; right: -2px; bottom: -2px; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: #fff; border: 3px solid var(--bg); display: flex; align-items: center; justify-content: center; }
+.story .plus svg { width: 12px; height: 12px; }
+.story .name { max-width: 72px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .post { background: var(--surface); border-radius: 26px; box-shadow: var(--shadow-sm); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .post .media { border-radius: 18px; overflow: hidden; height: 220px; position: relative; }
 .post-actions { display: flex; align-items: center; gap: 16px; }
@@ -434,4 +453,14 @@ svg { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; }
+  /* The intro is the brand moment, so it still plays, just without the card-level motion elsewhere. */
+  .splash .mark { animation-duration: 0.5s !important; }
+  .splash .ring { animation-duration: 1.9s !important; animation-delay: 0.3s !important; }
+  .splash .word { animation-duration: 0.5s !important; animation-delay: 1.75s !important; }
+  .splash .l2 { animation-duration: 0.7s !important; animation-delay: 2.1s !important; }
+  .splash .tagline { animation-duration: 0.6s !important; animation-delay: 2.3s !important; }
+  .splash .load { animation-duration: 0.3s !important; animation-delay: 0.4s !important; }
+  .splash .load span { animation-duration: 3.2s !important; animation-delay: 0.4s !important; }
+  .splash { transition-duration: 0.45s !important; }
+  .tab.spin .ring { animation-duration: 1.5s !important; }
 }

@@ -280,13 +280,35 @@
     education: 'BA Graphic Design, Manchester School of Art, 2026',
   };
 
+  // People on Rolla. Each has a story colour, work samples in a studio palette and a short bio.
+  var B = function (id) { return company(id).brand; };
   var people = [
-    { id: 'p1', name: 'Tom Fletcher', initials: 'TF', role: 'Brand designer at Tidal Media', mutual: 12, color: '#FF6B4A' },
-    { id: 'p2', name: 'Ellie Lowe', initials: 'EL', role: 'Junior designer at Northpaw', mutual: 8, color: '#1F3B2D' },
-    { id: 'p3', name: 'Jack Holloway', initials: 'JH', role: 'Packaging designer, Salford', mutual: 5, color: '#2F5BFF' },
-    { id: 'p4', name: 'Sophie Barker', initials: 'SB', role: 'Illustrator, Manchester', mutual: 3, color: '#C2412A' },
-    { id: 'p5', name: 'Amir Shah', initials: 'AS', role: 'Motion designer at Signal & Noise', mutual: 6, color: '#121212' },
+    { id: 'p1', name: 'Tom Fletcher', initials: 'TF', role: 'Brand designer at Tidal Media', loc: 'Manchester', mutual: 12, color: '#FF6B4A', brand: 'tidal', arts: ['brand', 'social', 'editorial', 'packaging'],
+      bio: 'Brand designer for cafés, gyms and anything with a good story.', skills: ['Branding', 'Social', 'Typography'] },
+    { id: 'p2', name: 'Ellie Lowe', initials: 'EL', role: 'Junior designer at Northpaw', loc: 'Manchester', mutual: 8, color: '#1F3B2D', brand: 'northpaw', arts: ['packaging', 'brand', 'illustration', 'editorial'],
+      bio: 'Fresh out of Leeds Arts, now drawing labels for breweries.', skills: ['Packaging', 'Illustration', 'Print'] },
+    { id: 'p3', name: 'Jack Holloway', initials: 'JH', role: 'Packaging designer, Salford', loc: 'Salford', mutual: 5, color: '#2F5BFF', brand: 'paperplane', arts: ['packaging', 'brand', 'data', 'ui'],
+      bio: 'Freelance packaging designer. Ask me about cutter guides.', skills: ['Packaging', 'Branding', 'Figma'] },
+    { id: 'p4', name: 'Sophie Barker', initials: 'SB', role: 'Illustrator, Manchester', loc: 'Manchester', mutual: 3, color: '#C2412A', brand: 'atlas', arts: ['illustration', 'editorial', 'illustration', 'brand'],
+      bio: 'Botanical illustration, gig posters and the occasional mural.', skills: ['Illustration', 'Print', 'Procreate'] },
+    { id: 'p5', name: 'Amir Shah', initials: 'AS', role: 'Motion designer at Signal & Noise', loc: 'Bristol', mutual: 6, color: '#121212', brand: 'signal', arts: ['motion', 'motion', 'brand', 'social'],
+      bio: 'Idents, title sequences and a lot of easing curves.', skills: ['Motion', 'After Effects', 'Cinema 4D'] },
+    { id: 'p6', name: 'Megan Hughes', initials: 'MH', role: 'UX designer at Paperplane', loc: 'Liverpool', mutual: 4, color: '#2F5BFF', brand: 'paperplane', arts: ['ui', 'data', 'ui', 'editorial'],
+      bio: 'Designing public services that work with a screen reader first.', skills: ['UX', 'Accessibility', 'Figma'] },
+    { id: 'p7', name: 'Callum Reid', initials: 'CR', role: 'Front-end developer at Kite Labs', loc: 'London', mutual: 2, color: '#1E2A78', brand: 'kite', arts: ['code', 'ui', 'code', 'data'],
+      bio: 'React by day, generative art by night.', skills: ['React', 'CSS', 'Accessibility'] },
+    { id: 'p8', name: 'Lucy Bennett', initials: 'LB', role: 'Illustrator at Orbit Games', loc: 'Leeds', mutual: 7, color: '#2D1B4E', brand: 'orbit', arts: ['illustration', 'ui', 'illustration', 'social'],
+      bio: 'Painting tiny turnips for a cosy farming game.', skills: ['Illustration', 'Character design', 'Games'] },
+    { id: 'p9', name: 'Oliver Grant', initials: 'OG', role: 'Art director at Atlas Outdoor', loc: 'Bristol', mutual: 3, color: '#24402F', brand: 'atlas', arts: ['brand', 'editorial', 'illustration', 'social'],
+      bio: 'Campaigns shot on hillsides, in the rain, usually.', skills: ['Art direction', 'Branding', 'Photography'] },
+    { id: 'p10', name: 'Ruby Clarke', initials: 'RC', role: 'Copywriter at Tidal Media', loc: 'Manchester', mutual: 9, color: '#FF6B4A', brand: 'tidal', arts: ['editorial', 'social', 'editorial', 'brand'],
+      bio: 'Writing captions that sound like a person, not a brand.', skills: ['Copywriting', 'Tone of voice', 'Social'] },
+    { id: 'p11', name: 'Sam Turner', initials: 'ST', role: 'Product designer at Mosaic Health', loc: 'Leeds', mutual: 1, color: '#0E7052', brand: 'mosaic', arts: ['ui', 'data', 'ui', 'brand'],
+      bio: 'Helping people stick with their physio, one screen at a time.', skills: ['UX', 'Research', 'Figma'] },
+    { id: 'p12', name: 'Grace Whitaker', initials: 'GW', role: 'Graphic designer at Brightside Records', loc: 'Manchester', mutual: 5, color: '#111111', brand: 'brightside', arts: ['illustration', 'editorial', 'brand', 'packaging'],
+      bio: 'Record sleeves, tour posters and screen prints that smell of ink.', skills: ['Print', 'Typography', 'Illustration'] },
   ];
+  people.forEach(function (p) { p.brandColors = B(p.brand); p.associates = 60 + (p.name.length * 13) % 240; });
 
   var posts = [
     { id: 'f1', kind: 'showcase', who: 'p1', meta: 'Associate · 3h', text: 'Six weeks, one very patient café owner. New identity for Kettle & Crumb, from logo to the menu boards.', art: 'brand',

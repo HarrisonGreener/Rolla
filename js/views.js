@@ -90,7 +90,7 @@
     return '<section class="view ' + (ui.enter || '') + '" aria-label="Jobs">' +
       '<div class="pad top-space">' +
         '<div class="row between" style="height:44px"><button class="filter-btn" data-act="open-filters" aria-label="Filter roles' + (active.length ? ', ' + active.length + ' active' : '') + '">' + I.filter + 'Filter' +
-          (active.length ? '<span class="n num">' + active.length + '</span>' : '') + '</button>' + B.wordmark(34) + '</div>' +
+          (active.length ? '<span class="n num">' + active.length + '</span>' : '') + '</button><button class="replay" data-act="replay-intro" aria-label="Rolla, replay the intro">' + B.wordmark(34) + '</button></div>' +
         '<div class="discover-head"><div class="col g4"><h1 class="h1 num">' + esc(heading) + '</h1><p class="small muted">' + sub +
           (active.length ? ' · <button class="link" data-act="clear-filters" style="padding:0;font-size:13px">Clear</button>' : '') + '</p></div></div></div>' +
       body + '</section>' + tabbar('discover');
@@ -194,25 +194,34 @@
       '</div></div></section>';
   }
 
-  /* ---------- Feed ---------- */
-  function feed(ui) {
-    var st = S.get();
-    var stories = '<button class="story" data-act="tab" data-id="profile"><span class="ring seen"><span class="inner">' + A.art(D.me.work[0].art, D.me.work[0].brand, 'me-story') + '</span></span>Your work</button>' +
-      D.people.map(function (p, i) {
-        var post = D.posts.filter(function (x) { return x.who === p.id && x.art; })[0];
-        var art = post ? A.art(post.art, post.brand, p.id) : '<span class="avatar" style="width:100%;height:100%;background:' + p.color + '">' + esc(p.initials) + '</span>';
-        return '<button class="story" data-act="person" data-id="' + p.id + '"><span class="ring"><span class="inner">' + art + '</span></span><span class="ellipsis" style="max-width:66px">' + esc(p.name.split(' ')[0]) + '</span></button>';
-      }).join('');
+  /* ---------- Network ---------- */
+  function personAvatar(p, size) {
+    size = size || 40;
+    return '<span class="avatar" style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.34) + 'px;background:' + p.color + '">' + esc(p.initials) + '</span>';
+  }
+  function acqButton(p, small) {
+    var on = S.get().acquaintances.indexOf(p.id) !== -1;
+    return '<button class="btn ' + (small ? 'btn-xs ' : 'btn-sm ') + (on ? 'btn-outline' : 'btn-ink') + '" data-act="acq" data-id="' + p.id + '" aria-pressed="' + on + '">' + (on ? 'Added' : small ? 'Add' : 'Add as acquaintance') + '</button>';
+  }
 
+  function stories() {
+    var mine = '<button class="story" data-act="tab" data-id="profile"><span class="ring seen"><span class="inner">' + A.art(D.me.work[0].art, D.me.work[0].brand, 'me-story') + '</span><span class="plus">' + I.plus + '</span></span><span class="name">Your work</span></button>';
+    return mine + D.people.map(function (p) {
+      return '<button class="story" data-act="person" data-id="' + p.id + '"><span class="ring"><span class="inner">' + A.art(p.arts[0], p.brandColors, p.id + 'story') + '</span></span><span class="name">' + esc(p.name.split(' ')[0]) + '</span></button>';
+    }).join('');
+  }
+
+  function postsHtml() {
+    var st = S.get();
     var posts = D.posts.map(function (p) {
       var liked = !!st.liked[p.id], head, media = '';
       if (p.kind === 'company') {
         var c = D.company(p.co);
-        head = A.mark(c, 40) + '<div class="grow"><p class="h4 row g4">' + esc(c.name) + verified(c) + '</p><p class="caption">' + esc(p.meta) + '</p></div>';
+        head = '<button class="row g10 grow plain" data-act="company" data-id="' + c.id + '">' + A.mark(c, 40) + '<span class="grow"><span class="h4 row g4">' + esc(c.name) + verified(c) + '</span><span class="caption">' + esc(p.meta) + '</span></span></button>';
         if (p.art) media = '<div class="media">' + A.art(p.art, c.brand, p.id) + '</div>';
       } else {
         var who = D.person(p.who);
-        head = '<span class="avatar" style="background:' + who.color + '">' + esc(who.initials) + '</span><div class="grow"><p class="h4">' + esc(who.name) + '</p><p class="caption">' + esc(who.role) + ' · ' + esc(p.meta) + '</p></div>';
+        head = '<button class="row g10 grow plain" data-act="person" data-id="' + who.id + '">' + personAvatar(who) + '<span class="grow"><span class="h4" style="display:block">' + esc(who.name) + '</span><span class="caption">' + esc(who.role) + ' · ' + esc(p.meta) + '</span></span></button>';
         if (p.art) media = '<div class="media">' + A.art(p.art, p.brand, p.id) + '</div>';
       }
       var job = p.job ? D.job(p.job) : null;
@@ -228,22 +237,99 @@
           (p.vouch ? '<button class="vouch" data-act="like" data-id="v' + p.id + '" aria-pressed="' + vouched + '">' + (vouched ? 'Vouched for ' : 'Vouch for ') + esc(p.vouch) + '</button>' : '') +
         '</div></article>';
     });
-
     var suggest = '<div class="post"><div class="row between"><p class="h4">People you may know</p><span class="caption">From your course and studios</span></div>' +
-      D.people.slice(1, 5).map(function (p) {
-        var on = st.acquaintances.indexOf(p.id) !== -1;
-        return '<div class="row g10"><span class="avatar" style="background:' + p.color + '">' + esc(p.initials) + '</span>' +
-          '<div class="grow"><p class="h4 ellipsis">' + esc(p.name) + '</p><p class="caption ellipsis">' + esc(p.role) + ' · ' + p.mutual + ' mutual</p></div>' +
-          '<button class="btn btn-xs ' + (on ? 'btn-outline' : 'btn-ink') + '" data-act="acq" data-id="' + p.id + '" aria-pressed="' + on + '">' + (on ? 'Added' : 'Add') + '</button></div>';
+      [1, 5, 7, 11].map(function (i) {
+        var p = D.people[i];
+        return '<div class="row g10"><button class="row g10 grow plain" data-act="person" data-id="' + p.id + '">' + personAvatar(p) +
+          '<span class="grow"><span class="h4 ellipsis" style="display:block">' + esc(p.name) + '</span><span class="caption ellipsis" style="display:block">' + esc(p.role) + ' · ' + p.mutual + ' mutual</span></span></button>' + acqButton(p, true) + '</div>';
       }).join('') + '<p class="caption">Add someone as an acquaintance. When they add you back, you become associates.</p></div>';
     posts.splice(2, 0, suggest);
+    return posts.join('');
+  }
 
+  /* Search across people, studios and jobs. */
+  function searchAll(q) {
+    q = q.trim().toLowerCase();
+    function has() { for (var i = 0; i < arguments.length; i++) if (String(arguments[i]).toLowerCase().indexOf(q) !== -1) return true; return false; }
+    return {
+      people: D.people.filter(function (p) { return has(p.name, p.role, p.loc, p.skills.join(' ')); }),
+      studios: D.companies.filter(function (c) { return has(c.name, c.sector, c.location); }),
+      jobs: D.jobs.filter(function (j) { var c = co(j); return has(j.title, j.cat, j.tags.join(' '), j.loc, j.mode, j.type, c.name); }).sort(function (a, b) { return b.match - a.match; }),
+    };
+  }
+
+  function netBody(ui) {
+    var q = (ui.q || '').trim();
+    if (!q) {
+      return '<div class="col g8"><p class="small muted">Try searching</p><div class="row g8 wrap">' + ['Motion', 'Remote', 'Packaging', 'Northpaw', 'Leeds', 'Illustrator'].map(function (t) {
+        return '<button class="chip" data-act="qfill" data-id="' + t + '">' + t + '</button>';
+      }).join('') + '</div></div>' +
+        '<div class="stories" data-drag-scroll>' + stories() + '</div>' + postsHtml();
+    }
+    var r = searchAll(q), scope = ui.qscope || 'all';
+    var total = r.people.length + r.studios.length + r.jobs.length;
+    var scopes = [['all', 'All', total], ['people', 'People', r.people.length], ['studios', 'Studios', r.studios.length], ['jobs', 'Jobs', r.jobs.length]];
+    var html = '<div class="segmented four" role="group" aria-label="Show">' + scopes.map(function (x) {
+      return '<button data-act="qscope" data-id="' + x[0] + '" aria-pressed="' + (scope === x[0]) + '">' + x[1] + ' <span class="num">' + x[2] + '</span></button>';
+    }).join('') + '</div>';
+    if (!total) {
+      return html + '<div class="empty"><h2 class="h3">Nothing for “' + esc(q) + '”</h2><p class="body muted">Try a skill like Motion, a city like Leeds, or a studio name.</p></div>';
+    }
+    function group(key, title, items, rowFn) {
+      if (!items.length || (scope !== 'all' && scope !== key)) return '';
+      var shown = scope === 'all' ? items.slice(0, 3) : items;
+      return '<div class="col g8"><div class="row between"><p class="h4">' + title + '</p>' +
+        (scope === 'all' && items.length > 3 ? '<button class="link" data-act="qscope" data-id="' + key + '">See all ' + items.length + '</button>' : '') + '</div>' +
+        shown.map(rowFn).join('') + '</div>';
+    }
+    html += group('people', 'People', r.people, function (p) {
+      return '<div class="row-link"><button class="row g12 grow plain" data-act="person" data-id="' + p.id + '">' + personAvatar(p, 44) +
+        '<span class="grow"><span class="h4 ellipsis" style="display:block">' + esc(p.name) + '</span><span class="caption ellipsis" style="display:block">' + esc(p.role) + '</span></span></button>' + acqButton(p, true) + '</div>';
+    });
+    html += group('studios', 'Studios', r.studios, function (c) {
+      return '<button class="row-link" data-act="company" data-id="' + c.id + '">' + A.mark(c, 44) + '<span class="grow"><span class="h4 row g4">' + esc(c.name) + verified(c) + '</span>' +
+        '<span class="caption ellipsis" style="display:block">' + esc(c.sector) + ' · ' + esc(c.location) + '</span></span>' + I.chev + '</button>';
+    });
+    html += group('jobs', 'Jobs', r.jobs, function (j) {
+      return '<button class="row-link" data-act="job" data-id="' + j.id + '"><span class="thumb" style="width:48px;height:48px">' + jobArt(j) + '</span><span class="grow"><span class="h4 ellipsis" style="display:block">' + esc(j.title) + '</span>' +
+        '<span class="caption ellipsis" style="display:block">' + esc(co(j).name) + ' · ' + esc(j.salary) + '</span></span><span class="pill pill-mint num">' + j.match + '%</span></button>';
+    });
+    return html;
+  }
+
+  function feed(ui) {
     return '<section class="view ' + (ui.enter || '') + '" aria-label="Network"><div class="scroll"><div class="pad top-space col g16 tab-space">' +
-      '<div class="row between"><h1 class="h1">Network</h1>' +
-        '<button class="icon-btn" data-act="compose" aria-label="New post">' + I.plus + '</button></div>' +
-      '<div class="stories">' + stories + '</div>' +
-      posts.join('') +
+      '<div class="row between"><h1 class="h1">Network</h1><button class="icon-btn" data-act="compose" aria-label="New post">' + I.plus + '</button></div>' +
+      '<label class="search" for="net-q"><span class="ico">' + I.search + '</span><span class="sr-only">Search people, studios and jobs</span>' +
+        '<input id="net-q" type="search" autocomplete="off" placeholder="Search people, studios and jobs" value="' + esc(ui.q || '') + '">' +
+        (ui.q ? '<button class="clear" data-act="qclear" aria-label="Clear search">' + I.x + '</button>' : '') + '</label>' +
+      '<div class="col g16" id="net-body">' + netBody(ui) + '</div>' +
       '</div></div></section>' + tabbar('feed');
+  }
+
+  /* ---------- Person profile ---------- */
+  function personView(p, ui) {
+    var b = p.brandColors;
+    var on = S.get().acquaintances.indexOf(p.id) !== -1;
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="' + esc(p.name) + '"><div class="scroll">' +
+      '<div class="banner">' + A.art(p.arts[0], b, p.id + 'banner') +
+        '<div class="hero-bar" style="position:absolute;top:max(14px, env(safe-area-inset-top));left:16px;right:16px;display:flex;justify-content:space-between">' +
+        '<button class="icon-btn" data-act="back" aria-label="Back">' + I.back + '</button><button class="icon-btn" data-act="share" aria-label="Share profile">' + I.share + '</button></div></div>' +
+      '<div class="pad col g20" style="margin-top:-48px;position:relative;padding-bottom:40px">' +
+        '<div class="row between" style="align-items:flex-end"><span class="me-avatar" style="background:' + p.color + ';color:#fff">' + esc(p.initials) + '</span>' +
+          '<div class="row g16 num" style="padding-bottom:6px"><div class="col"><b class="h3">' + p.associates + '</b><span class="caption">associates</span></div>' +
+          '<div class="col"><b class="h3">' + p.mutual + '</b><span class="caption">mutual</span></div></div></div>' +
+        '<div class="col g6"><h1 class="h1">' + esc(p.name) + '</h1><p class="label mint">' + esc(p.role) + '</p>' +
+          '<p class="caption row g4">' + ico(I.pin, 'ico-sm') + esc(p.loc) + '</p><p class="body" style="margin-top:4px">' + esc(p.bio) + '</p></div>' +
+        '<div class="row g8">' + acqButton(p, false).replace('btn-sm ', 'btn-sm grow ') + '<button class="btn btn-ghost btn-sm grow" data-act="message" data-id="' + p.id + '">Message</button></div>' +
+        (on ? '<p class="caption" style="margin-top:-10px">When ' + esc(p.name.split(' ')[0]) + ' adds you back, you’ll be associates and can message each other.</p>' : '') +
+        '<div class="section"><h2 class="h3">Skills</h2><div class="row g6 wrap">' + p.skills.map(function (t) {
+          return '<span class="tag' + (D.me.skills.indexOf(t) !== -1 ? ' match' : '') + '">' + esc(t) + '</span>';
+        }).join('') + '</div></div>' +
+        '<div class="section"><h2 class="h3">Work</h2><div class="work-grid">' + p.arts.map(function (k, i) {
+          return '<figure>' + A.art(k, b, p.id + 'w' + i) + '</figure>';
+        }).join('') + '</div></div>' +
+      '</div></div></section>';
   }
 
   /* ---------- Applied ---------- */
@@ -401,6 +487,6 @@
 
   window.VIEWS = {
     esc: esc, discover: discover, jobView: jobView, companyView: companyView, feed: feed,
-    appliedView: appliedView, profileView: profileView, employerView: employerView, standoutSheet: standoutSheet, filterSheet: filterSheet, splash: splash,
+    appliedView: appliedView, personView: personView, netBody: netBody, profileView: profileView, employerView: employerView, standoutSheet: standoutSheet, filterSheet: filterSheet, splash: splash,
   };
 })();

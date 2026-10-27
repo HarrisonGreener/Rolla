@@ -41,6 +41,7 @@
     bell: s('<path d="M6 16 V11 a6 6 0 0 1 12 0 V16 L19.5 18 H4.5Z M10 20.5 a2 2 0 0 0 4 0"/>'),
     plus: s('<path d="M12 5 V19 M5 12 H19"/>', { sw: 2.4 }),
     network: s('<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="5.5" r="2.6"/><circle cx="18" cy="18.5" r="2.6"/><path d="M8.4 10.8 L15.6 6.8 M8.4 13.2 L15.6 17.2 M18 8.1 V15.9"/>'),
+    search: s('<circle cx="11" cy="11" r="6.5"/><path d="M16 16 L20 20"/>'),
     calendar: s('<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10 H20 M8.5 3.5 V7 M15.5 3.5 V7"/>'),
   };
 
@@ -90,7 +91,8 @@
   /* The Rolodex mark as a tab icon: grey when idle, mint cards and ink stand when selected. */
   function tabMark(active) {
     var ink = active ? '#0E0E0E' : 'currentColor', cards = active ? '#1FAE80' : 'currentColor';
-    return '<svg viewBox="5 4 54 56" aria-hidden="true">' + stand(ink) + fan(cards) + hub(ink, active ? '#FFFFFF' : '#FFFFFF') + '</svg>';
+    return '<svg viewBox="5 4 54 56" aria-hidden="true"><defs><clipPath id="tab-top"><rect x="-10" y="-10" width="84" height="42.5"/></clipPath></defs>' +
+      stand(ink) + '<g clip-path="url(#tab-top)">' + ring(cards) + '</g>' + hub(ink, '#FFFFFF') + '</svg>';
   }
 
   window.ICONS = I;
