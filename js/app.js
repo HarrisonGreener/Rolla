@@ -97,28 +97,38 @@
   function doPass(id, fromDeck) {
     var j = D.job(id);
     S.pass(id);
-    ui.arrive = fromDeck;
+    ui.arrive = false; // the flip already moved the next card into place
     if (fromDeck) render(); else back();
     toast('Passed on ' + j.title, { action: 'undo-pass', id: id, actionLabel: 'Undo' });
   }
   function doApply(id, fromDeck) {
     var j = D.job(id), c = D.company(j.co);
     S.apply(id);
-    ui.arrive = fromDeck;
+    ui.arrive = false; // the flip already moved the next card into place
     if (fromDeck) render(); else back();
     toast('Applied to ' + c.name, { icon: tint(I.check, '#7EE8C3'), action: 'tab', id: 'applied', actionLabel: 'View' });
   }
 
-  function flyOut(dir, then) {
+  /* The Rolodex flip: the top card tips forward over its bottom edge and falls away,
+     while the card behind stands up into place. */
+  function flyOut(dir, then, dx) {
     var card = app.querySelector('.card.top');
     if (!card) { then(); return; }
+    var x = typeof dx === 'number' ? dx : dir * 40;
+    var stamp = card.querySelector(dir < 0 ? '.stamp-pass' : '.stamp-apply');
+    if (stamp) stamp.style.opacity = 1;
     card.classList.add('dragging');
-    card.style.transition = 'transform 0.32s cubic-bezier(.4,0,.6,1), opacity 0.32s';
-    card.style.transform = 'translate(' + (dir * 520) + 'px, 40px) rotate(' + (dir * 26) + 'deg)';
-    card.style.opacity = '0';
+    card.style.transformOrigin = '50% 100%';
+    card.style.transition = 'transform 0.5s cubic-bezier(0.45, 0, 0.75, 0.35), opacity 0.18s ease 0.32s';
+    requestAnimationFrame(function () {
+      card.style.transform = 'translateX(' + (x * 1.3) + 'px) translateY(40px) rotateX(-95deg) rotateZ(' + (dir * 4) + 'deg)';
+      card.style.opacity = '0';
+    });
     var next = app.querySelector('.card.back-1');
-    if (next) { next.style.transition = 'transform 0.32s ease'; next.style.transform = 'none'; }
-    setTimeout(then, 260);
+    if (next) { next.style.transition = 'transform 0.5s cubic-bezier(0.32, 0.72, 0, 1) 0.2s'; next.style.transform = 'none'; }
+    var after = app.querySelector('.card.back-2');
+    if (after) { after.style.transition = 'transform 0.5s cubic-bezier(0.32, 0.72, 0, 1) 0.18s, opacity 0.4s'; after.style.transform = 'translateY(-14px) scale(0.95)'; after.style.opacity = 1; }
+    setTimeout(then, 560);
   }
 
   function share() {
@@ -268,8 +278,8 @@
     if (!drag || (e && e.pointerId !== drag.pid)) return;
     var d = drag; drag = null;
     if (!d.moved) { d.card.classList.remove('dragging'); go({ v: 'job', id: d.id }); return; }
-    if (d.dx < -THRESHOLD) { flyOut(-1, function () { doPass(d.id, true); }); return; }
-    if (d.dx > THRESHOLD && S.isRead(d.id)) { flyOut(1, function () { doApply(d.id, true); }); return; }
+    if (d.dx < -THRESHOLD) { flyOut(-1, function () { doPass(d.id, true); }, d.dx); return; }
+    if (d.dx > THRESHOLD && S.isRead(d.id)) { flyOut(1, function () { doApply(d.id, true); }, d.dx); return; }
     d.card.classList.remove('dragging');
     d.card.style.transform = '';
     if (d.next) { d.next.style.transition = ''; d.next.style.transform = ''; }
@@ -303,5 +313,5 @@
 
   render();
   app.insertAdjacentHTML('beforeend', V.splash());
-  setTimeout(hideSplash, 3500);
+  setTimeout(hideSplash, 3900);
 })();

@@ -86,6 +86,12 @@
     return '<span class="logo" role="img" aria-label="Rolla">' + mark(markSize) + wordmark(wordPx) + '</span>';
   }
 
+  /* The Rolodex mark as a tab icon: grey when idle, mint cards and ink stand when selected. */
+  function tabMark(active) {
+    var ink = active ? '#0E0E0E' : 'currentColor', cards = active ? '#1FAE80' : 'currentColor';
+    return '<svg viewBox="5 4 54 56" aria-hidden="true">' + stand(ink) + fan(cards) + hub(ink, active ? '#FFFFFF' : '#FFFFFF') + '</svg>';
+  }
+
   window.ICONS = I;
-  window.BRAND = { mark: mark, spinningMark: spinningMark, wordmark: wordmark, logo: logo };
+  window.BRAND = { mark: mark, spinningMark: spinningMark, wordmark: wordmark, logo: logo, tabMark: tabMark };
 })();

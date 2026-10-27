@@ -25,7 +25,7 @@ On a desktop browser it shows inside a phone frame. On a phone it fills the scre
 - **Apply button that fills as you read**: scroll the listing and the button fills with mint, then unlocks.
 - **Save for later**: bookmark roles and find them under Applied → Saved.
 - **Company profiles**: brand-coloured studio pages with ethos, recent work, the team and open roles. Shortlisting a company moves its jobs to the front of your deck.
-- **Feed**: stories, showcase posts, milestones and company posts, with likes, vouching and "Add as acquaintance".
+- **Network**: stories, showcase posts, milestones and company posts, with likes, vouching and "Add as acquaintance".
 - **Applied**: everything you've applied to, with Standouts first and a status timeline (Sent, Viewed, Shortlisted, Interview) that moves along over a few minutes. Applications can be withdrawn.
 - **Profile**: an Instagram-style candidate profile with associates, acquaintances and vouched skills.
 - **Employer view**: see how your applications look to a recruiter, with Standouts pinned at the top.

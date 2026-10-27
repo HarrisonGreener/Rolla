@@ -21,10 +21,6 @@
       '<b class="num">' + pct + '</b><span class="sr-only">% match</span></span>';
   }
   function verified(c) { return c.verified ? '<span class="ico-sm mint" title="Verified employer">' + I.verified + '<span class="sr-only">Verified</span></span>' : ''; }
-  function greeting() {
-    var h = new Date().getHours();
-    return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  }
   function whyLine(job) {
     if (job.matched.length) return '<p class="why">' + ico(I.sparkle, 'ico-sm') + 'Matches your ' + esc(andList(job.matched.slice(0, 2))) + '</p>';
     return '<p class="why" style="color:var(--muted)">' + ico(I.sparkle, 'ico-sm') + 'A stretch role: ' + esc(job.tags[0]) + ' is new for you</p>';
@@ -33,7 +29,7 @@
   /* ---------- Tab bar ---------- */
   function tabbar(active) {
     var n = S.appliedList().length;
-    var tabs = [['discover', 'Discover', I.discover], ['feed', 'Feed', I.feed], ['applied', 'Applied', I.applied], ['profile', 'Profile', I.profile]];
+    var tabs = [['discover', 'Jobs', B.tabMark(active === 'discover')], ['feed', 'Network', I.feed], ['applied', 'Applied', I.applied], ['profile', 'Profile', I.profile]];
     return '<nav class="tabbar" aria-label="Main">' + tabs.map(function (t) {
       return '<button class="tab" data-act="tab" data-id="' + t[0] + '"' + (t[0] === active ? ' aria-current="page"' : '') + '>' + t[2] + t[1] +
         (t[0] === 'applied' && n ? '<span class="dot num">' + n + '</span>' : '') + '</button>';
@@ -73,7 +69,7 @@
       return '<button class="chip" data-act="filter" data-id="' + esc(c) + '" aria-pressed="' + (st.filter === c) + '">' + esc(c) + '<span class="count num">' + (counts[c] || 0) + '</span></button>';
     }).join('');
 
-    var heading = st.filter === 'For you' ? deck.length + ' roles picked for you' : deck.length + ' ' + st.filter + ' role' + (deck.length === 1 ? '' : 's');
+    var heading = st.filter === 'For you' ? deck.length + ' roles for you' : deck.length + ' ' + st.filter + ' role' + (deck.length === 1 ? '' : 's');
     var body;
     if (!topJob) {
       var any = D.jobs[0];
@@ -96,10 +92,9 @@
         '</div>';
     }
 
-    return '<section class="view ' + (ui.enter || '') + '" aria-label="Discover">' +
-      '<div class="pad top-space"><div class="discover-head"><div class="col g4"><p class="eyebrow">' + greeting() + ', ' + esc(D.me.first) + '</p>' +
-        '<h1 class="h2 num">' + esc(heading) + '</h1></div>' +
-        B.logo(22, 21) + '</div>' +
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="Jobs">' +
+      '<div class="pad top-space"><div class="discover-head"><h1 class="h1 num">' + esc(heading) + '</h1>' +
+        B.wordmark(34) + '</div>' +
         '<div class="chips" role="group" aria-label="Disciplines">' + chips + '</div></div>' +
       body + '</section>' + tabbar('discover');
   }
@@ -246,8 +241,8 @@
       }).join('') + '<p class="caption">Add someone as an acquaintance. When they add you back, you become associates.</p></div>';
     posts.splice(2, 0, suggest);
 
-    return '<section class="view ' + (ui.enter || '') + '" aria-label="Feed"><div class="scroll"><div class="pad top-space col g16 tab-space">' +
-      '<div class="row between"><div class="col g4"><p class="eyebrow">From your associates and studios</p><h1 class="h1">Feed</h1></div>' +
+    return '<section class="view ' + (ui.enter || '') + '" aria-label="Network"><div class="scroll"><div class="pad top-space col g16 tab-space">' +
+      '<div class="row between"><h1 class="h1">Network</h1>' +
         '<button class="icon-btn" data-act="compose" aria-label="New post">' + I.plus + '</button></div>' +
       '<div class="stories">' + stories + '</div>' +
       posts.join('') +
@@ -386,9 +381,10 @@
 
   /* ---------- Splash ---------- */
   function splash() {
-    return '<div class="splash" id="splash" data-act="skip-splash">' + B.spinningMark(150) +
-      '<div class="word">' + B.wordmark(68, 'word-anim') + '</div>' +
+    return '<div class="splash" id="splash" data-act="skip-splash">' + B.spinningMark(176) +
+      '<div class="word">' + B.wordmark(80, 'word-anim') + '</div>' +
       '<p class="tagline">Swipe into work.</p>' +
+      '<div class="load" role="progressbar" aria-label="Loading"><span></span></div>' +
       '<button class="skip" data-act="skip-splash">Skip</button></div>';
   }
 

@@ -24,6 +24,7 @@
   --body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --apple: cubic-bezier(0.32, 0.72, 0, 1);
   color-scheme: light;
 }
 
@@ -64,8 +65,8 @@ svg { display: block; }
 }
 
 .view { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
-.view.enter-push { animation: pushIn 0.38s var(--ease); }
-.view.enter-pop { animation: popIn 0.32s var(--ease); }
+.view.enter-push { animation: pushIn 0.5s var(--apple); box-shadow: -20px 0 40px rgba(14,14,14,0.08); }
+.view.enter-pop { animation: popIn 0.45s var(--apple); }
 .view.enter-fade { animation: fadeIn 0.25s ease; }
 .scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
 .scroll::-webkit-scrollbar { display: none; }
@@ -83,7 +84,7 @@ svg { display: block; }
 .small { font-size: 13px; line-height: 19px; margin: 0; }
 .label { font-size: 13px; line-height: 18px; font-weight: 500; margin: 0; }
 .caption { font-size: 12px; line-height: 16px; color: var(--muted); margin: 0; }
-.eyebrow { font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.eyebrow { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--muted); margin: 0; }
 .muted { color: var(--muted); }
 .mint { color: var(--mint-text); }
 .gold { color: var(--gold-text); }
@@ -163,20 +164,37 @@ svg { display: block; }
 
 .card-surface { background: var(--surface); border-radius: 22px; box-shadow: var(--shadow-sm); }
 
+/* Minimal hover: colour only, no movement. */
+.btn, .chip, .tab, .icon-btn, .save-btn, .round, .row-link, .link, .post-actions button, .segmented button, .story .inner, .job-attach { transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, filter 0.2s ease, transform 0.15s ease; }
+@media (hover: hover) {
+  .btn:hover { filter: brightness(0.95); }
+  .btn-ghost:hover { background: #F7F7F5; filter: none; }
+  .chip:not([aria-pressed="true"]):hover { background: var(--chip); }
+  .tab:not([aria-current="page"]):hover { color: var(--ink); }
+  .icon-btn:hover, .save-btn:hover { background: #F2F3F0; }
+  .link:hover { opacity: 0.7; }
+  .post-actions button:not([aria-pressed="true"]):not(.vouch):hover { color: var(--ink); }
+  .story:hover .inner { opacity: 0.85; }
+  .job-attach:hover { background: #EDEEEA; }
+  .segmented button:not([aria-pressed="true"]):hover { color: var(--ink); }
+}
+
 /* ---------- Discover ---------- */
-.discover-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-bottom: 12px; }
-.deck { position: relative; flex: 1; min-height: 0; margin: 0 16px; }
+.discover-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 14px; }
+.discover-head .h1 { font-size: 30px; line-height: 34px; letter-spacing: -0.7px; }
+.deck { position: relative; flex: 1; min-height: 0; margin: 26px 16px 0; perspective: 1600px; }
 .card {
   position: absolute; inset: 0 0 18px; background: var(--surface); border-radius: 30px; box-shadow: var(--shadow-md);
   overflow: hidden; display: flex; flex-direction: column; padding: 8px;
-  transform-origin: 50% 90%; transition: transform 0.45s var(--spring), opacity 0.3s ease;
+  transform-origin: 50% 100%; transition: transform 0.5s var(--apple), opacity 0.3s ease, box-shadow 0.3s;
   user-select: none; -webkit-user-select: none; touch-action: none; cursor: grab;
 }
 .card.dragging { transition: none; cursor: grabbing; box-shadow: var(--shadow-lg); }
-.card.back-1 { transform: translateY(12px) scale(0.955); }
-.card.back-2 { transform: translateY(24px) scale(0.91); opacity: 0.7; }
-.card.back-1, .card.back-2 { pointer-events: none; }
-.card.top.arrive { animation: arrive 0.45s var(--spring); }
+/* Cards waiting behind peek out above the top card, like a Rolodex. */
+.card.back-1 { transform: translateY(-14px) scale(0.95); }
+.card.back-2 { transform: translateY(-27px) scale(0.9); opacity: 0.6; }
+.card.back-1, .card.back-2 { pointer-events: none; transform-origin: 50% 0; }
+.card.top.arrive { animation: arrive 0.6s var(--apple); }
 .card .media { position: relative; border-radius: 23px; overflow: hidden; flex: 1 1 54%; min-height: 150px; }
 .card .media .art { position: absolute; inset: 0; }
 .card .media .shade { position: absolute; inset: auto 0 0 0; height: 45%; background: linear-gradient(to top, rgba(14,14,14,0.38), rgba(14,14,14,0)); }
@@ -184,6 +202,7 @@ svg { display: block; }
 .card .on-media.top { top: 12px; }
 .card .on-media.bottom { bottom: 12px; }
 .card .co-pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.94); border-radius: 22px; padding: 4px 12px 4px 4px; box-shadow: var(--shadow-sm); max-width: 100%; min-width: 0; }
+.card .body-area h2 { font-size: 29px; line-height: 33px; letter-spacing: -0.6px; }
 .card .body-area { padding: 16px 12px 8px; display: flex; flex-direction: column; gap: 10px; flex: 0 0 auto; }
 .meta-row { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ink-2); }
 .meta-row span { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; }
@@ -217,7 +236,9 @@ svg { display: block; }
   display: inline-flex; align-items: center; justify-content: center; color: var(--ink); position: relative; transition: transform 0.2s var(--spring);
 }
 .round svg { width: 26px; height: 26px; }
-.round:hover { transform: translateY(-2px); }
+.round:hover { background: #F7F7F5; }
+.round.gold:hover { background: #FFC23A; }
+.round.mint:hover { background: #72E0B9; }
 .round.gold { width: 52px; height: 52px; background: var(--gold); }
 .round.gold svg { width: 22px; height: 22px; }
 .round.mint { background: var(--mint); }
@@ -233,8 +254,9 @@ svg { display: block; }
 }
 .tab { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px; border-radius: 22px; font-size: 11px; font-weight: 600; color: var(--muted); position: relative; transition: background 0.25s, color 0.25s; }
 .tab svg { width: 22px; height: 22px; }
+.tab[data-id="discover"] svg { width: 25px; height: 25px; margin-top: -2px; }
 .tab[aria-current="page"] { color: var(--ink); background: var(--mint-tint); }
-.tab[aria-current="page"] svg { color: var(--mint-text); }
+.tab[aria-current="page"]:not([data-id="discover"]) svg { color: var(--mint-text); }
 .tab .dot { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 17px; height: 17px; border-radius: 9px; background: var(--ink); color: #fff; font-size: 10px; line-height: 17px; padding: 0 4px; font-weight: 700; }
 
 /* ---------- Listing ---------- */
@@ -263,7 +285,7 @@ svg { display: block; }
   display: flex; align-items: center; gap: 12px; background: var(--surface); border: none; border-radius: 20px; box-shadow: var(--shadow-sm);
   padding: 12px; text-align: left; width: 100%; color: var(--ink); transition: transform 0.15s, box-shadow 0.2s;
 }
-.row-link:hover { box-shadow: var(--shadow-md); }
+.row-link:hover { background: #FAFAF8; }
 .row-link .chev { width: 18px; height: 18px; color: var(--muted); flex: none; }
 .thumb { width: 56px; height: 56px; border-radius: 14px; overflow: hidden; flex: none; }
 .bottombar {
@@ -371,6 +393,8 @@ svg { display: block; }
   transition: opacity 0.45s ease, transform 0.45s ease;
 }
 .splash.out { opacity: 0; transform: scale(1.04); pointer-events: none; }
+.splash .load { width: 120px; height: 4px; border-radius: 2px; background: var(--chip); overflow: hidden; margin-top: 6px; opacity: 0; animation: fadeIn 0.3s ease 0.4s forwards; }
+.splash .load span { display: block; height: 100%; width: 0; background: var(--mint-mark); border-radius: 2px; animation: load 3.2s var(--apple) 0.4s forwards; }
 .splash .tagline { font-family: var(--display); font-weight: 700; font-size: 19px; color: var(--ink-2); margin: 0; opacity: 0; animation: fadeUp 0.6s ease 2.3s forwards; letter-spacing: -0.2px; }
 .splash .mark { animation: pop 0.5s var(--ease) both; }
 .splash .ring { transform-box: view-box; transform-origin: 32px 32px; animation: spin 1.9s cubic-bezier(.12,.6,.18,1) 0.3s both; }
@@ -382,16 +406,17 @@ svg { display: block; }
 .empty .art-blob { width: 160px; height: 110px; border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-md); margin-bottom: 8px; }
 
 /* ---------- Motion ---------- */
+@keyframes load { 0% { width: 0; } 60% { width: 72%; } 100% { width: 100%; } }
 @keyframes spin { from { transform: rotate(0); } to { transform: rotate(720deg); } }
 @keyframes pop { from { opacity: 0; transform: translateY(24px) scale(0.9); } to { opacity: 1; transform: none; } }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes swipe { 0% { transform: rotate(0); } 55% { transform: rotate(18deg); } 80% { transform: rotate(10deg); } 100% { transform: rotate(12deg); } }
-@keyframes pushIn { from { transform: translateX(28%); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes popIn { from { transform: translateX(-18%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pushIn { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes popIn { from { transform: translateX(-28%); opacity: 0.5; } to { transform: none; opacity: 1; } }
 @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes toastIn { from { transform: translateY(16px) scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes arrive { from { transform: translateY(12px) scale(0.955); } to { transform: none; } }
+@keyframes arrive { 0% { transform: translateY(-14px) scale(0.95) rotateX(12deg); } 70% { transform: rotateX(-1.5deg); } 100% { transform: none; } }
 @keyframes readyPop { 0% { transform: scale(1); } 40% { transform: scale(1.05); } 100% { transform: scale(1); } }
 @keyframes starPop { 0% { transform: scale(0.4) rotate(-20deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
 @keyframes spark { from { transform: translate(-50%, -50%) rotate(var(--a)) translateY(0) scale(1); opacity: 1; } to { transform: translate(-50%, -50%) rotate(var(--a)) translateY(-70px) scale(0.3); opacity: 0; } }
