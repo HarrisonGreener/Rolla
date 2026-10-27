@@ -20,8 +20,8 @@ On a desktop browser it shows inside a phone frame. On a phone it fills the scre
 - **Splash animation**: the Rolodex mark turns, then the wordmark's second "l" swipes into place.
 - **Swipe deck**: drag a card left to pass or right to apply, or use the buttons. Arrow keys work when a card is focused. Passes can be undone.
 - **Read to unlock**: Apply stays locked until you scroll to the end of a job listing, so every application is deliberate.
-- **Standouts**: three a week. Each needs a short message and goes to the top of the employer's list.
-- **For you**: every card shows your match score and which of your skills it matches. Disciplines: Brand, UX/UI, Illustration, Motion, Marketing, Content and Tech.
+- **Standouts**: three a week, shown in ink with a mint star. Each needs a short message and goes to the top of the employer's list.
+- **Matches and filters**: every card shows your match score and which of your skills it matches. The Filter sheet narrows roles by discipline (Brand, UX/UI, Illustration, Motion, Marketing, Content, Tech), contract and where you work.
 - **Apply button that fills as you read**: scroll the listing and the button fills with mint, then unlocks.
 - **Save for later**: bookmark roles and find them under Applied → Saved.
 - **Company profiles**: brand-coloured studio pages with ethos, recent work, the team and open roles. Shortlisting a company moves its jobs to the front of your deck.
@@ -42,7 +42,7 @@ On a desktop browser it shows inside a phone frame. On a phone it fills the scre
 
 ## Brand
 
-- **Colours**: Ink `#0E0E0E`, Mint `#7EE8C3` (Mint 700 `#0E7052` for text on light), Gold `#FFC94D` reserved for Standouts (Gold 700 `#8A5A00` for text on light).
+- **Colours**: Ink `#0E0E0E` and Mint `#7EE8C3` (Mint 700 `#0E7052` for text on light). Standouts are ink with a mint star.
 - **Type**: Figtree for display, headings and buttons; Inter for body text, labels and captions.
 - **Logo**: a Rolodex on its stand, next to a wordmark whose second "l" is a swiped card.
 

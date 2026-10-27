@@ -29,7 +29,7 @@
   /* ---------- Tab bar ---------- */
   function tabbar(active) {
     var n = S.appliedList().length;
-    var tabs = [['discover', 'Jobs', B.tabMark(active === 'discover')], ['feed', 'Network', I.feed], ['applied', 'Applied', I.applied], ['profile', 'Profile', I.profile]];
+    var tabs = [['discover', 'Jobs', B.tabMark(active === 'discover')], ['feed', 'Network', I.network], ['applied', 'Applied', I.applied], ['profile', 'Profile', I.profile]];
     return '<nav class="tabbar" aria-label="Main">' + tabs.map(function (t) {
       return '<button class="tab" data-act="tab" data-id="' + t[0] + '"' + (t[0] === active ? ' aria-current="page"' : '') + '>' + t[2] + t[1] +
         (t[0] === 'applied' && n ? '<span class="dot num">' + n + '</span>' : '') + '</button>';
@@ -63,22 +63,17 @@
 
   function discover(ui) {
     var st = S.get(), deck = S.deck(), topJob = deck[0];
-    var counts = {};
-    D.jobs.forEach(function (j) { if (!S.isPassed(j.id) && !S.isApplied(j.id)) { counts[j.cat] = (counts[j.cat] || 0) + 1; counts['For you'] = (counts['For you'] || 0) + 1; } });
-    var chips = D.categories.map(function (c) {
-      return '<button class="chip" data-act="filter" data-id="' + esc(c) + '" aria-pressed="' + (st.filter === c) + '">' + esc(c) + '<span class="count num">' + (counts[c] || 0) + '</span></button>';
-    }).join('');
-
-    var heading = st.filter === 'For you' ? deck.length + ' roles for you' : deck.length + ' ' + st.filter + ' role' + (deck.length === 1 ? '' : 's');
+    var active = S.activeFilters();
+    var heading = deck.length + (active.length ? ' matching role' + (deck.length === 1 ? '' : 's') : ' roles for you');
+    var sub = active.length ? esc(active.join(' · ')) : 'Best matches first';
     var body;
     if (!topJob) {
-      var any = D.jobs[0];
       body = '<div class="empty" style="flex:1;justify-content:center;padding-bottom:110px">' +
         '<div class="art-blob">' + A.art('motion', D.company('signal').brand, 'empty') + '</div>' +
-        '<h2 class="h2">' + (st.filter === 'For you' ? 'You’re all caught up' : 'No more ' + esc(st.filter) + ' roles') + '</h2>' +
-        '<p class="body muted">New roles land every morning. You can look again at the ones you passed, or try another discipline.</p>' +
+        '<h2 class="h2">' + (active.length ? 'No more roles match' : 'You’re all caught up') + '</h2>' +
+        '<p class="body muted">' + (active.length ? 'Try loosening your filters, or look again at the roles you passed.' : 'New roles land every morning. You can look again at the ones you passed.') + '</p>' +
         (st.passed.length ? '<button class="btn btn-ink" data-act="unpass">' + I.undo + 'Review ' + st.passed.length + ' passed</button>' : '') +
-        (st.filter !== 'For you' ? '<button class="btn btn-ghost" data-act="filter" data-id="For you">Show all roles</button>' : '') +
+        (active.length ? '<button class="btn btn-ghost" data-act="clear-filters">Clear filters</button>' : '') +
         '</div>';
     } else {
       var read = S.isRead(topJob.id);
@@ -93,9 +88,11 @@
     }
 
     return '<section class="view ' + (ui.enter || '') + '" aria-label="Jobs">' +
-      '<div class="pad top-space"><div class="discover-head"><h1 class="h1 num">' + esc(heading) + '</h1>' +
-        B.wordmark(34) + '</div>' +
-        '<div class="chips" role="group" aria-label="Disciplines">' + chips + '</div></div>' +
+      '<div class="pad top-space">' +
+        '<div class="row between" style="height:44px"><button class="filter-btn" data-act="open-filters" aria-label="Filter roles' + (active.length ? ', ' + active.length + ' active' : '') + '">' + I.filter + 'Filter' +
+          (active.length ? '<span class="n num">' + active.length + '</span>' : '') + '</button>' + B.wordmark(34) + '</div>' +
+        '<div class="discover-head"><div class="col g4"><h1 class="h1 num">' + esc(heading) + '</h1><p class="small muted">' + sub +
+          (active.length ? ' · <button class="link" data-act="clear-filters" style="padding:0;font-size:13px">Clear</button>' : '') + '</p></div></div></div>' +
       body + '</section>' + tabbar('discover');
   }
 
@@ -305,8 +302,8 @@
           '<p class="caption row g4">' + ico(I.pin, 'ico-sm') + esc(m.location) + ' · ' + esc(m.education) + '</p>' +
           '<p class="body" style="margin-top:4px">' + esc(m.bio) + '</p></div>' +
         '<div class="row g8"><button class="btn btn-ink btn-sm grow" data-act="compose">Edit profile</button><button class="btn btn-ghost btn-sm grow" data-act="share">View CV</button></div>' +
-        '<div class="card-surface row g14" style="padding:16px;background:var(--gold-tint);box-shadow:none"><div class="star-slots">' + slots + '</div>' +
-          '<div class="grow"><p class="h4" style="color:var(--gold-deep)">' + st.standoutsLeft + ' of ' + S.STANDOUTS_PER_WEEK + ' Standouts left</p><p class="caption" style="color:var(--gold-deep)">They refill every Monday.</p></div></div>' +
+        '<div class="so-panel"><div class="star-slots on-dark">' + slots + '</div>' +
+          '<div class="grow"><p class="h4">' + st.standoutsLeft + ' of ' + S.STANDOUTS_PER_WEEK + ' Standouts left</p><p class="caption">They refill every Monday.</p></div></div>' +
         '<div class="quote"><p class="eyebrow" style="margin-bottom:6px">How I work</p><p class="body" style="color:var(--ink)">' + esc(m.howIWork) + '</p></div>' +
         '<div class="section"><div class="row between"><h2 class="h3">Vouched skills</h2><span class="caption">by associates</span></div><div class="row g6 wrap">' +
           m.vouches.map(function (v) { return '<span class="tag match num">' + esc(v[0]) + ' <b>' + v[1] + '</b></span>'; }).join('') + '</div></div>' +
@@ -330,7 +327,7 @@
     function row(p, gold) {
       var you = p.me ? ' <span class="pill pill-mint">You</span>' : '';
       if (gold) {
-        return '<div class="app-card standout"><span class="row g10"><span class="avatar" style="background:var(--gold-tint);color:var(--gold-deep)">' + esc(p.initials) + '</span>' +
+        return '<div class="app-card standout"><span class="row g10"><span class="avatar" style="background:var(--ink);color:var(--mint)">' + esc(p.initials) + '</span>' +
           '<span class="grow"><span class="h4 row g6">' + esc(p.name) + you + '</span><span class="caption">' + esc(p.role) + '</span></span><span class="h4 mint num">' + p.match + '%</span></span>' +
           '<span class="msg-quote">“' + esc(p.msg || '') + '”</span>' +
           '<span class="row g8"><span class="btn btn-ink btn-xs">View profile</span><span class="btn btn-ghost btn-xs">Reply</span></span></div>';
@@ -343,7 +340,7 @@
       '<div class="row g12">' + A.mark(c, 48) + '<div class="grow"><p class="caption">' + esc(c.name) + '</p><h1 class="h2">' + esc(job.title) + '</h1></div></div>' +
       '<div class="stats num"><div><b>' + (job.applicants + (mine ? 1 : 0)) + '</b><span class="caption">applicants</span></div><div><b>' + standouts.length + '</b><span class="caption">Standouts</span></div><div><b>' + esc(job.closes) + '</b><span class="caption">closes</span></div></div>' +
       (mine ? '' : '<p class="small muted">You haven’t applied to anything yet, so this shows a sample role. Apply or send a Standout, then come back.</p>') +
-      '<p class="eyebrow row g4" style="color:var(--gold-text)">' + ico(I.star, 'ico-sm') + 'Standouts, pinned first</p>' + standouts.map(function (p) { return row(p, true); }).join('') +
+      '<p class="eyebrow row g4" style="color:var(--ink)">' + ico(I.star, 'ico-sm') + 'Standouts, pinned first</p>' + standouts.map(function (p) { return row(p, true); }).join('') +
       '<p class="eyebrow" style="margin-top:6px">Everyone else, by match</p>' + rest.map(function (p) { return row(p, false); }).join('') +
       '</div></div></section>';
   }
@@ -353,7 +350,7 @@
     var c = co(job), left = S.get().standoutsLeft, inner;
     if (sh.sent) {
       var sparks = '';
-      for (var i = 0; i < 10; i++) sparks += '<i style="--a:' + (i * 36) + 'deg;animation-delay:' + (0.1 + (i % 3) * 0.04) + 's;background:' + (i % 2 ? 'var(--gold)' : 'var(--mint)') + '"></i>';
+      for (var i = 0; i < 10; i++) sparks += '<i style="--a:' + (i * 36) + 'deg;animation-delay:' + (0.1 + (i % 3) * 0.04) + 's;background:' + (i % 2 ? 'var(--ink)' : 'var(--mint)') + '"></i>';
       inner = '<div class="col g12" style="align-items:center;text-align:center;padding:8px 0 4px">' +
         '<div class="burst">' + sparks + '<span class="core">' + I.star + '</span></div>' +
         '<h2 class="h1">You stood out</h2><p class="body">' + esc(c.name) + ' will see your application before anyone else’s. We’ll tell you the moment they reply.</p>' +
@@ -372,11 +369,25 @@
           '<div class="prompts" role="group" aria-label="Ideas"><button data-act="prompt" data-id="0">Mention a project</button><button data-act="prompt" data-id="1">Why this studio</button><button data-act="prompt" data-id="2">When you can start</button></div>' +
           '<textarea id="so-msg" rows="4" maxlength="300" placeholder="I’ve been designing labels for a local brewery and love how you approach small-batch brands…">' + esc(sh.msg || '') + '</textarea>' +
           '<div class="row between"><span id="so-err" class="' + (sh.error ? 'error' : 'caption') + '">' + (sh.error ? 'Write a short message first' : 'Sent with your profile and work') + '</span><span id="so-count" class="caption num">' + (sh.msg || '').length + '/300</span></div></div>' +
-        '<div class="row g12" style="background:var(--gold-tint);border-radius:18px;padding:12px 14px"><div class="star-slots">' + slots + '</div><span class="label" style="color:var(--gold-deep)">' + left + ' of ' + S.STANDOUTS_PER_WEEK + ' left this week</span></div>' +
+        '<div class="so-panel" style="padding:12px 14px"><div class="star-slots on-dark">' + slots + '</div><span class="label">' + left + ' of ' + S.STANDOUTS_PER_WEEK + ' left this week</span></div>' +
         '<button class="btn btn-gold btn-block" data-act="send-standout" data-id="' + job.id + '">' + I.star + 'Send Standout</button>' +
         '<button class="link muted" data-act="close-sheet" style="align-self:center">Not now</button>';
     }
     return '<div class="scrim" data-act="close-sheet"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Send a Standout"><div class="grabber"></div>' + inner + '</div>';
+  }
+
+  /* ---------- Filter sheet ---------- */
+  function filterSheet() {
+    var f = S.get().filters, O = D.filterOptions, n = S.deck().length;
+    var groups = [['cat', 'Discipline'], ['type', 'Contract'], ['mode', 'Where you work']];
+    return '<div class="scrim" data-act="close-sheet"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Filter roles"><div class="grabber"></div>' +
+      '<div class="row between"><h2 class="h2">Filter roles</h2><button class="link muted" data-act="clear-filters">Clear all</button></div>' +
+      groups.map(function (g) {
+        return '<div class="fgroup"><p class="h4">' + g[1] + '</p><div class="opts" role="group" aria-label="' + g[1] + '">' + O[g[0]].map(function (o) {
+          return '<button class="chip" data-act="fsel" data-id="' + g[0] + '|' + esc(o) + '" aria-pressed="' + (f[g[0]] === o) + '">' + esc(o) + '</button>';
+        }).join('') + '</div></div>';
+      }).join('') +
+      '<button class="btn btn-ink btn-block num" data-act="close-sheet"' + (n ? '' : ' style="background:var(--chip);color:var(--muted)"') + '>' + (n ? 'Show ' + n + ' role' + (n === 1 ? '' : 's') : 'No roles match yet') + '</button></div>';
   }
 
   /* ---------- Splash ---------- */
@@ -390,6 +401,6 @@
 
   window.VIEWS = {
     esc: esc, discover: discover, jobView: jobView, companyView: companyView, feed: feed,
-    appliedView: appliedView, profileView: profileView, employerView: employerView, standoutSheet: standoutSheet, splash: splash,
+    appliedView: appliedView, profileView: profileView, employerView: employerView, standoutSheet: standoutSheet, filterSheet: filterSheet, splash: splash,
   };
 })();

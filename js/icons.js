@@ -40,6 +40,7 @@
     arrowUR: s('<path d="M7 17 L17 7 M9 7 H17 V15"/>'),
     bell: s('<path d="M6 16 V11 a6 6 0 0 1 12 0 V16 L19.5 18 H4.5Z M10 20.5 a2 2 0 0 0 4 0"/>'),
     plus: s('<path d="M12 5 V19 M5 12 H19"/>', { sw: 2.4 }),
+    network: s('<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="5.5" r="2.6"/><circle cx="18" cy="18.5" r="2.6"/><path d="M8.4 10.8 L15.6 6.8 M8.4 13.2 L15.6 17.2 M18 8.1 V15.9"/>'),
     calendar: s('<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10 H20 M8.5 3.5 V7 M15.5 3.5 V7"/>'),
   };
 

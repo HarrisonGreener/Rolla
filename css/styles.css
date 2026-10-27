@@ -1,4 +1,4 @@
-/* Rolla prototype styles. Light theme built on ink, mint and gold. */
+/* Rolla prototype styles. Light theme built on ink and mint. Standouts are ink with a mint star. */
 :root {
   --bg: #F4F5F2;
   --surface: #FFFFFF;
@@ -12,10 +12,8 @@
   --mint-text: #0E7052;
   --mint-deep: #0A513C;
   --mint-tint: #E8F8F1;
-  --gold: #FFC94D;
-  --gold-text: #8A5A00;
-  --gold-deep: #6B4500;
-  --gold-tint: #FFF4D6;
+  --so: #0E0E0E;
+  --so-star: #7EE8C3;
   --error: #D63B40;
   --shadow-sm: 0 1px 2px rgba(14, 14, 14, 0.05), 0 2px 8px rgba(14, 14, 14, 0.05);
   --shadow-md: 0 1px 2px rgba(14, 14, 14, 0.04), 0 10px 30px rgba(14, 14, 14, 0.09);
@@ -87,7 +85,7 @@ svg { display: block; }
 .eyebrow { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--muted); margin: 0; }
 .muted { color: var(--muted); }
 .mint { color: var(--mint-text); }
-.gold { color: var(--gold-text); }
+.gold { color: var(--ink); }
 .num { font-variant-numeric: tabular-nums; }
 .ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -130,7 +128,8 @@ svg { display: block; }
 .btn svg { width: 18px; height: 18px; }
 .btn-ink { background: var(--ink); color: #fff; }
 .btn-mint { background: var(--mint); color: var(--ink); }
-.btn-gold { background: var(--gold); color: var(--ink); }
+.btn-gold { background: var(--so); color: #FFFFFF; }
+.btn-gold svg { color: var(--so-star); }
 .btn-ghost { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
 .btn-outline { background: transparent; color: var(--mint-text); box-shadow: inset 0 0 0 2px var(--mint-text); }
 .btn-sm { height: 40px; border-radius: 20px; font-size: 14px; padding: 0 16px; }
@@ -156,7 +155,8 @@ svg { display: block; }
 .tag { display: inline-flex; align-items: center; gap: 4px; background: var(--chip); color: var(--ink-2); border-radius: 8px; padding: 5px 9px; font-size: 12px; font-weight: 500; }
 .tag.match { background: var(--mint-tint); color: var(--mint-deep); }
 .pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 14px; padding: 5px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-.pill-gold { background: var(--gold-tint); color: var(--gold-deep); }
+.pill-gold { background: var(--so); color: #FFFFFF; }
+.pill-gold .ico-sm { color: var(--so-star); }
 .pill-mint { background: var(--mint-tint); color: var(--mint-deep); }
 .pill-grey { background: var(--chip); color: var(--ink-2); }
 .pill-glass { background: rgba(255, 255, 255, 0.92); color: var(--ink); box-shadow: var(--shadow-sm); }
@@ -180,6 +180,12 @@ svg { display: block; }
 }
 
 /* ---------- Discover ---------- */
+.filter-btn { position: relative; height: 40px; border-radius: 20px; border: none; background: var(--surface); box-shadow: var(--shadow-sm); padding: 0 14px 0 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.filter-btn svg { width: 18px; height: 18px; }
+.filter-btn .n { min-width: 18px; height: 18px; border-radius: 9px; background: var(--ink); color: #fff; font-size: 11px; line-height: 18px; text-align: center; padding: 0 5px; }
+@media (hover: hover) { .filter-btn:hover { background: #F2F3F0; } }
+.fgroup { display: flex; flex-direction: column; gap: 10px; }
+.fgroup .opts { display: flex; flex-wrap: wrap; gap: 8px; }
 .discover-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 14px; }
 .discover-head .h1 { font-size: 30px; line-height: 34px; letter-spacing: -0.7px; }
 .deck { position: relative; flex: 1; min-height: 0; margin: 26px 16px 0; perspective: 1600px; }
@@ -237,9 +243,10 @@ svg { display: block; }
 }
 .round svg { width: 26px; height: 26px; }
 .round:hover { background: #F7F7F5; }
-.round.gold:hover { background: #FFC23A; }
+.round.gold:hover { background: #2A2B28; }
 .round.mint:hover { background: #72E0B9; }
-.round.gold { width: 52px; height: 52px; background: var(--gold); }
+.round.gold { width: 52px; height: 52px; background: var(--so); color: var(--so-star); }
+.round.gold .left { background: var(--mint); color: var(--ink); }
 .round.gold svg { width: 22px; height: 22px; }
 .round.mint { background: var(--mint); }
 .round.locked { background: var(--surface); color: var(--muted); }
@@ -311,7 +318,7 @@ svg { display: block; }
 .stories { display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; margin: 0 -20px; padding: 4px 20px 2px; }
 .stories::-webkit-scrollbar { display: none; }
 .story { flex: none; width: 66px; background: none; border: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: var(--ink-2); }
-.story .ring { width: 64px; height: 64px; border-radius: 50%; padding: 3px; background: conic-gradient(from 200deg, var(--mint-mark), var(--mint), var(--gold), var(--mint-mark)); }
+.story .ring { width: 64px; height: 64px; border-radius: 50%; padding: 3px; background: conic-gradient(from 200deg, var(--mint-mark), var(--mint), var(--mint-mark)); }
 .story .ring.seen { background: var(--line); }
 .story .inner { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--bg); overflow: hidden; }
 .post { background: var(--surface); border-radius: 26px; box-shadow: var(--shadow-sm); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
@@ -322,7 +329,7 @@ svg { display: block; }
 .post-actions .ico { width: 20px; height: 20px; }
 .post-actions .vouch { margin-left: auto; color: var(--mint-text); background: var(--mint-tint); padding: 6px 10px; border-radius: 14px; }
 .post-actions .vouch[aria-pressed="true"] { color: #fff; background: var(--mint-text); }
-.milestone { display: flex; align-items: center; gap: 10px; background: var(--gold-tint); color: var(--gold-deep); border-radius: 16px; padding: 12px 14px; font-weight: 600; font-size: 14px; }
+.milestone { display: flex; align-items: center; gap: 10px; background: var(--mint-tint); color: var(--mint-deep); border-radius: 16px; padding: 12px 14px; font-weight: 600; font-size: 14px; }
 .job-attach { display: flex; align-items: center; gap: 12px; background: var(--bg); border: none; border-radius: 18px; padding: 8px; text-align: left; width: 100%; }
 
 /* ---------- Applied ---------- */
@@ -330,7 +337,7 @@ svg { display: block; }
 .segmented button { border: none; background: none; border-radius: 12px; padding: 9px; font-size: 14px; font-weight: 600; color: var(--muted); transition: background 0.2s, color 0.2s; }
 .segmented button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
 .app-card { background: var(--surface); border-radius: 24px; box-shadow: var(--shadow-sm); padding: 14px; display: flex; flex-direction: column; gap: 14px; border: none; text-align: left; width: 100%; color: var(--ink); }
-.app-card.standout { box-shadow: inset 0 0 0 2px var(--gold), var(--shadow-sm); }
+.app-card.standout { box-shadow: inset 0 0 0 2px var(--so), var(--shadow-sm); }
 .timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
 .timeline .step { display: flex; flex-direction: column; gap: 6px; }
 .timeline .bar { height: 5px; border-radius: 3px; background: var(--chip); }
@@ -338,15 +345,19 @@ svg { display: block; }
 .timeline .step.now .bar { background: linear-gradient(90deg, var(--mint-mark), var(--mint)); }
 .timeline .step span { font-size: 11px; font-weight: 600; color: var(--muted); }
 .timeline .step.done span, .timeline .step.now span { color: var(--ink); }
-.msg-quote { background: var(--gold-tint); color: var(--gold-deep); border-radius: 14px; padding: 10px 12px; font-size: 13px; line-height: 19px; }
+.msg-quote { background: var(--chip); color: var(--ink-2); border-radius: 14px; padding: 10px 12px; font-size: 13px; line-height: 19px; }
 
 /* ---------- Profile ---------- */
 .banner { height: 150px; position: relative; flex: none; }
 .banner .art { position: absolute; inset: 0; }
 .me-avatar { width: 96px; height: 96px; border-radius: 50%; background: var(--mint); color: var(--mint-deep); font-family: var(--display); font-weight: 800; font-size: 32px; display: flex; align-items: center; justify-content: center; border: 5px solid var(--bg); box-shadow: var(--shadow-md); }
 .star-slots { display: flex; gap: 6px; }
-.star-slots span { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--gold); color: var(--ink); }
-.star-slots span.used { background: rgba(107, 69, 0, 0.12); color: rgba(107, 69, 0, 0.45); }
+.star-slots span { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--so); color: var(--so-star); }
+.star-slots span.used { background: var(--chip); color: #A3A59F; }
+.star-slots.on-dark span { background: var(--mint); color: var(--ink); }
+.star-slots.on-dark span.used { background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.4); }
+.so-panel { background: var(--so); color: #FFFFFF; border-radius: 22px; padding: 16px; display: flex; align-items: center; gap: 14px; }
+.so-panel .caption { color: #B5B7B1; }
 .star-slots svg { width: 15px; height: 15px; }
 .work-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .work-grid figure { margin: 0; position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 4 / 3; box-shadow: var(--shadow-sm); max-width: 100%; }
@@ -360,21 +371,21 @@ svg { display: block; }
   animation: sheetUp 0.42s var(--ease); max-height: 92%; overflow-y: auto; box-shadow: 0 -10px 40px rgba(14,14,14,0.15);
 }
 .grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--line); align-self: center; }
-.star-hero { width: 56px; height: 56px; border-radius: 18px; background: var(--gold); display: inline-flex; align-items: center; justify-content: center; flex: none; animation: starPop 0.6s var(--spring); }
+.star-hero { width: 56px; height: 56px; border-radius: 18px; background: var(--so); color: var(--so-star); display: inline-flex; align-items: center; justify-content: center; flex: none; animation: starPop 0.6s var(--spring); }
 .star-hero svg { width: 28px; height: 28px; }
 .field { display: flex; flex-direction: column; gap: 8px; }
 .field textarea {
   background: var(--bg); border: 1px solid var(--line); border-radius: 18px; padding: 14px; font-size: 15px; line-height: 22px; resize: none; min-height: 112px;
 }
-.field textarea:focus { outline: 2px solid var(--gold-text); outline-offset: 1px; background: #fff; }
+.field textarea:focus { outline: 2px solid var(--ink); outline-offset: 1px; background: #fff; }
 .prompts { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -22px; padding: 0 22px; }
 .prompts::-webkit-scrollbar { display: none; }
-.prompts button { flex: none; border: none; background: var(--gold-tint); color: var(--gold-deep); border-radius: 14px; padding: 7px 12px; font-size: 12px; font-weight: 600; }
+.prompts button { flex: none; border: none; background: var(--chip); color: var(--ink-2); border-radius: 14px; padding: 7px 12px; font-size: 12px; font-weight: 600; }
 .error { color: var(--error); font-size: 12px; font-weight: 500; }
 .burst { position: relative; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; }
-.burst .core { width: 84px; height: 84px; border-radius: 28px; background: var(--gold); display: flex; align-items: center; justify-content: center; animation: starPop 0.7s var(--spring); }
+.burst .core { width: 84px; height: 84px; border-radius: 28px; background: var(--so); color: var(--so-star); display: flex; align-items: center; justify-content: center; animation: starPop 0.7s var(--spring); }
 .burst .core svg { width: 40px; height: 40px; }
-.burst i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: spark 0.9s var(--ease) forwards; }
+.burst i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; border-radius: 50%; background: var(--mint); animation: spark 0.9s var(--ease) forwards; }
 
 /* ---------- Toast ---------- */
 .toast {

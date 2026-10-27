@@ -27,7 +27,7 @@
     else if (view.tab === 'applied') html = V.appliedView(ui);
     else if (view.tab === 'profile') html = V.profileView(ui);
     else html = V.discover(ui);
-    if (sheet) html += V.standoutSheet(D.job(sheet.jobId), sheet);
+    if (sheet) html += sheet.kind === 'filter' ? V.filterSheet() : V.standoutSheet(D.job(sheet.jobId), sheet);
 
     // Keep the splash and any visible toast across re-renders.
     var splashEl = document.getElementById('splash');
@@ -40,10 +40,6 @@
     if (newScroller && keepScroll) newScroller.scrollTop = keepScroll;
     lastKey = key;
     ui.arrive = false;
-
-    // Keep the selected discipline chip in view.
-    var chip = app.querySelector('.chip[aria-pressed="true"]');
-    if (chip && chip.parentNode) chip.parentNode.scrollLeft = Math.max(0, chip.offsetLeft - chip.parentNode.offsetLeft - 60);
 
     if (view.v === 'job') watchReading(view.id);
   }
@@ -151,7 +147,9 @@
   var actions = {
     tab: function (id) { home(id); },
     back: back,
-    filter: function (id) { S.setFilter(id); ui.arrive = true; render(); },
+    'open-filters': function () { sheet = { kind: 'filter' }; render(); },
+    fsel: function (id) { var p = id.split('|'); S.setFilter(p[0], p[1]); ui.arrive = true; render(); },
+    'clear-filters': function () { S.clearFilters(); ui.arrive = true; render(); },
     job: function (id) { go({ v: 'job', id: id }); },
     company: function (id) { if (top().v === 'company' && top().id === id) return; go({ v: 'company', id: id }); },
     employer: function () { go({ v: 'employer' }); },
@@ -182,7 +180,7 @@
     standout: function (id) {
       var jid = id || topJobId();
       if (!jid) return;
-      sheet = { jobId: jid, msg: '', error: false, sent: false };
+      sheet = { kind: 'standout', jobId: jid, msg: '', error: false, sent: false };
       render();
     },
     prompt: function (i) {

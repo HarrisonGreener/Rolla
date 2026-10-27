@@ -322,7 +322,11 @@
 
   window.ROLLA = {
     companies: companies, jobs: jobs, me: me, people: people, posts: posts, applicants: applicants,
-    categories: ['For you', 'Brand', 'UX/UI', 'Illustration', 'Motion', 'Marketing', 'Content', 'Tech'],
+    filterOptions: {
+      cat: ['Any', 'Brand', 'UX/UI', 'Illustration', 'Motion', 'Marketing', 'Content', 'Tech'],
+      type: ['Any', 'Full time', 'Freelance'],
+      mode: ['Any', 'Remote', 'Hybrid', 'On-site'],
+    },
     company: company, job: job, person: person,
   };
 })();

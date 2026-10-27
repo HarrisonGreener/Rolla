@@ -1,6 +1,6 @@
 /* App state, saved to localStorage so the demo survives a refresh. */
 (function () {
-  var KEY = 'rolla-demo-v2';
+  var KEY = 'rolla-demo-v3';
   var STANDOUTS_PER_WEEK = 3;
   var D = window.ROLLA;
 
@@ -14,7 +14,7 @@
       shortlisted: ['northpaw'],
       acquaintances: [],
       liked: {},
-      filter: 'For you',
+      filters: { cat: 'Any', type: 'Any', mode: 'Any' },
     };
   }
 
@@ -24,7 +24,6 @@
       if (raw) {
         var s = JSON.parse(raw), base = fresh();
         for (var k in base) if (!(k in s)) s[k] = base[k];
-        if (D.categories.indexOf(s.filter) === -1) s.filter = 'For you';
         return s;
       }
     } catch (e) { /* storage unavailable: run in memory */ }
@@ -82,12 +81,16 @@
     toggleShortlist: function (cid) { toggleIn(state.shortlisted, cid); save(); },
     toggleAcquaintance: function (pid) { toggleIn(state.acquaintances, pid); save(); },
     toggleLike: function (pid) { state.liked[pid] = !state.liked[pid]; save(); },
-    setFilter: function (f) { state.filter = f; save(); },
+    setFilter: function (key, val) { state.filters[key] = val; save(); },
+    clearFilters: function () { state.filters = { cat: 'Any', type: 'Any', mode: 'Any' }; save(); },
+    activeFilters: function () { var f = state.filters; return ['cat', 'type', 'mode'].filter(function (k) { return f[k] !== 'Any'; }).map(function (k) { return f[k]; }); },
 
-    /* Jobs still to swipe. "For you" shows every role; shortlisted studios come first, then best match. */
+    /* Jobs still to swipe, after filters. Shortlisted studios come first, then best match. */
     deck: function () {
       return D.jobs.filter(function (j) {
-        return !store.isPassed(j.id) && !store.isApplied(j.id) && (state.filter === 'For you' || j.cat === state.filter);
+        var f = state.filters;
+        return !store.isPassed(j.id) && !store.isApplied(j.id) &&
+          (f.cat === 'Any' || j.cat === f.cat) && (f.type === 'Any' || j.type === f.type) && (f.mode === 'Any' || j.mode === f.mode);
       }).sort(function (a, b) {
         var sa = store.isShortlisted(a.co) ? 1 : 0, sb = store.isShortlisted(b.co) ? 1 : 0;
         if (sa !== sb) return sb - sa;
