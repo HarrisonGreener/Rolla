@@ -17,7 +17,7 @@ On a desktop browser it shows inside a phone frame. On a phone it fills the scre
 
 ## What works
 
-- **Loading screen**: the Rolodex wheel spins round its hub and settles, the wordmark's second "l" swipes into place and a progress bar fills. It plays on every load (even with reduced motion turned on), replays when you tap the wordmark, and the Jobs tab icon's wheel spins on hover or tap.
+- **Loading screen**: loose cards flick out of the Rolodex wheel one after another, the wordmark's second "l" swipes into place and a progress bar fills. It plays on every load (even with reduced motion turned on), replays when you tap the wordmark, and the Jobs tab icon flicks its cards on hover or tap.
 - **Swipe deck**: swipe a card up to apply or down to save it for later. Passing is a deliberate tap on the ✕ button, not a swipe, so the deck doesn't feel like a dating app. Cards roll over the wheel like a Rolodex: up and over the top to apply, down and under to save. With a keyboard, use the up arrow to apply, the down arrow to save and Delete to pass. Saves and passes can be undone.
 - **Read to unlock**: Apply stays locked until you scroll to the end of a job listing, so every application is deliberate. Until then, a card resists being swiped up.
 - **Standouts**: three a week, shown in ink with a mint star. Each needs a short message and goes to the top of the employer's list.

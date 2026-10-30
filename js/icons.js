@@ -54,13 +54,18 @@
   function wheel(cards, weight) {
     var w = weight || 2.8;
     // Solid half-disc of cards, radius 22, with its flat edge tilted up to the right.
-    var fanShape = '<path d="M36 25 L52.85 10.86 A22 22 0 0 1 50.14 41.85 A22 22 0 0 1 19.15 39.14 Z" fill="' + cards + '"/>';
-    // Loose cards flicking out on the open side of the wheel.
-    var loose = [[-58, 11, 27], [-49, 11, 26], [184, 11, 27], [196, 11, 25]].map(function (c) {
-      var a = c[0] * Math.PI / 180, x1 = 36 + c[1] * Math.cos(a), y1 = 25 + c[1] * Math.sin(a), x2 = 36 + c[2] * Math.cos(a), y2 = 25 + c[2] * Math.sin(a);
-      return '<path d="M' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' L' + x2.toFixed(2) + ' ' + y2.toFixed(2) + '" stroke="' + cards + '" stroke-width="' + w + '" stroke-linecap="round"/>';
+    var fanShape = '<path class="fan" d="M36 25 L52.85 10.86 A22 22 0 0 1 50.14 41.85 A22 22 0 0 1 19.15 39.14 Z" fill="' + cards + '"/>';
+    // Loose cards flicking out on the open side. They are the same length as the fan's cards (radius 22),
+    // so they look like they came from the wheel. When animated, each one sweeps out from the fan's
+    // lower edge (140 degrees) round to its resting angle, one after another.
+    var loose = [[196, 0.15], [184, 0.32], [311, 0.5], [302, 0.66]].map(function (c) {
+      var deg = c[0], a = deg * Math.PI / 180;
+      var x1 = 36 + 11 * Math.cos(a), y1 = 25 + 11 * Math.sin(a), x2 = 36 + 22 * Math.cos(a), y2 = 25 + 22 * Math.sin(a);
+      return '<g class="rc" style="--from:' + (140 - deg) + 'deg;--d:' + c[1] + 's"><path d="M' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' L' + x2.toFixed(2) + ' ' + y2.toFixed(2) +
+        '" stroke="' + cards + '" stroke-width="' + w + '" stroke-linecap="round"/></g>';
     }).join('');
-    return '<g class="ring">' + fanShape + loose + '</g>';
+    // Loose cards sit under the fan, so while they are still inside the wheel they're hidden.
+    return '<g class="ring">' + loose + fanShape + '</g>';
   }
   function stand(ink, weight) {
     return '<path d="M35 26 L18 34 C7 39 4.5 49 9.5 54 C11.5 56 14.5 56.5 18 56.5 L52 56.5" stroke="' + ink + '" stroke-width="' + (weight || 4.5) + '" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
