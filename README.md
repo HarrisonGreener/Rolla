@@ -17,13 +17,13 @@ On a desktop browser it shows inside a phone frame. On a phone it fills the scre
 
 ## What works
 
-- **Loading screen**: the Rolodex mark turns, the wordmark's second "l" swipes into place and a progress bar fills. It plays on every load (even with reduced motion turned on), replays when you tap the wordmark, and the Jobs tab icon spins on hover or tap.
-- **Swipe deck**: drag a card left to pass or right to apply, or use the buttons. Arrow keys work when a card is focused. Passes can be undone.
-- **Read to unlock**: Apply stays locked until you scroll to the end of a job listing, so every application is deliberate.
+- **Loading screen**: the Rolodex wheel spins round its hub and settles, the wordmark's second "l" swipes into place and a progress bar fills. It plays on every load (even with reduced motion turned on), replays when you tap the wordmark, and the Jobs tab icon's wheel spins on hover or tap.
+- **Swipe deck**: swipe a card up to apply or down to save it for later. Passing is a deliberate tap on the ✕ button, not a swipe, so the deck doesn't feel like a dating app. Cards roll over the wheel like a Rolodex: up and over the top to apply, down and under to save. With a keyboard, use the up arrow to apply, the down arrow to save and Delete to pass. Saves and passes can be undone.
+- **Read to unlock**: Apply stays locked until you scroll to the end of a job listing, so every application is deliberate. Until then, a card resists being swiped up.
 - **Standouts**: three a week, shown in ink with a mint star. Each needs a short message and goes to the top of the employer's list.
 - **Matches and filters**: every card shows your match score and which of your skills it matches. The Filter sheet narrows roles by discipline (Brand, UX/UI, Illustration, Motion, Marketing, Content, Tech), contract and where you work.
 - **Apply button that fills as you read**: scroll the listing and the button fills with mint, then unlocks.
-- **Save for later**: bookmark roles and find them under Applied → Saved.
+- **Save for later**: swipe down or tap the bookmark. Saved roles leave the deck and live under Applied → Saved.
 - **Company profiles**: brand-coloured studio pages with ethos, recent work, the team and open roles. Shortlisting a company moves its jobs to the front of your deck.
 - **Network**: search across people, studios and jobs with All / People / Studios / Jobs results; swipeable stories (drag with a mouse on desktop); person profiles with skills and work; showcase posts, milestones and company posts, with likes, vouching and "Add as acquaintance".
 - **Applied**: everything you've applied to, with Standouts first and a status timeline (Sent, Viewed, Shortlisted, Interview) that moves along over a few minutes. Applications can be withdrawn.
@@ -44,7 +44,7 @@ On a desktop browser it shows inside a phone frame. On a phone it fills the scre
 
 - **Colours**: Ink `#0E0E0E` and Mint `#7EE8C3` (Mint 700 `#0E7052` for text on light). Standouts are ink with a mint star.
 - **Type**: Figtree for display, headings and buttons; Inter for body text, labels and captions.
-- **Logo**: a Rolodex on its stand, next to a wordmark whose second "l" is a swiped card.
+- **Logo**: a side-on Rolodex with a solid mint fan of cards, a few loose cards flicking out and a curved ink stand, next to a wordmark whose second "l" is a swiped card.
 
 ## Structure
 

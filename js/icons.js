@@ -42,41 +42,46 @@
     plus: s('<path d="M12 5 V19 M5 12 H19"/>', { sw: 2.4 }),
     network: s('<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="5.5" r="2.6"/><circle cx="18" cy="18.5" r="2.6"/><path d="M8.4 10.8 L15.6 6.8 M8.4 13.2 L15.6 17.2 M18 8.1 V15.9"/>'),
     search: s('<circle cx="11" cy="11" r="6.5"/><path d="M16 16 L20 20"/>'),
+    arrowUp: s('<path d="M12 19 V5 M6 11 L12 5 L18 11"/>', { sw: 2.4 }),
+    arrowDown: s('<path d="M12 5 V19 M6 13 L12 19 L18 13"/>', { sw: 2.4 }),
     calendar: s('<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10 H20 M8.5 3.5 V7 M15.5 3.5 V7"/>'),
   };
 
-  function fan(fill) {
-    var r = '';
-    for (var a = -90; a <= 90; a += 15) {
-      r += '<rect x="30.5" y="6" width="3" height="18" rx="1"' + (a ? ' transform="rotate(' + a + ' 32 32)"' : '') + '/>';
-    }
-    return '<g fill="' + fill + '">' + r + '</g>';
+  /* The Rolodex mark, drawn side-on like the reference cartoon: a solid fan of cards on a hub,
+     a few loose cards flicking out of the wheel, and a curved stand that sweeps down into a flat base.
+     The hub sits at (36, 25), so the wheel can spin around it. */
+  var HUB = '36 25';
+  function wheel(cards, weight) {
+    var w = weight || 2.8;
+    // Solid half-disc of cards, radius 22, with its flat edge tilted up to the right.
+    var fanShape = '<path d="M36 25 L52.85 10.86 A22 22 0 0 1 50.14 41.85 A22 22 0 0 1 19.15 39.14 Z" fill="' + cards + '"/>';
+    // Loose cards flicking out on the open side of the wheel.
+    var loose = [[-58, 11, 27], [-49, 11, 26], [184, 11, 27], [196, 11, 25]].map(function (c) {
+      var a = c[0] * Math.PI / 180, x1 = 36 + c[1] * Math.cos(a), y1 = 25 + c[1] * Math.sin(a), x2 = 36 + c[2] * Math.cos(a), y2 = 25 + c[2] * Math.sin(a);
+      return '<path d="M' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' L' + x2.toFixed(2) + ' ' + y2.toFixed(2) + '" stroke="' + cards + '" stroke-width="' + w + '" stroke-linecap="round"/>';
+    }).join('');
+    return '<g class="ring">' + fanShape + loose + '</g>';
   }
-  function ring(fill) {
-    var r = '';
-    for (var a = 0; a < 360; a += 15) {
-      r += '<rect x="30.5" y="6" width="3" height="18" rx="1"' + (a ? ' transform="rotate(' + a + ' 32 32)"' : '') + '/>';
-    }
-    return '<g class="ring" fill="' + fill + '">' + r + '</g>';
+  function stand(ink, weight) {
+    return '<path d="M35 26 L18 34 C7 39 4.5 49 9.5 54 C11.5 56 14.5 56.5 18 56.5 L52 56.5" stroke="' + ink + '" stroke-width="' + (weight || 4.5) + '" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
   }
-  function stand(ink) {
-    return '<path d="M32 32 L20 55 M32 32 L44 55" stroke="' + ink + '" stroke-width="3.5" stroke-linecap="round" fill="none"/>' +
-      '<rect x="13" y="54" width="38" height="4.5" rx="2.25" fill="' + ink + '"/>';
+  // The paper knockout ring goes over the fan, the stand goes over that, and the hub caps it.
+  function draw(cards, ink, paper, weights) {
+    weights = weights || {};
+    return wheel(cards, weights.card) + '<circle cx="36" cy="25" r="10" fill="' + paper + '"/>' + stand(ink, weights.stand) +
+      '<circle cx="36" cy="25" r="7.5" fill="' + ink + '"/><circle cx="36" cy="25" r="2.6" fill="' + paper + '"/>';
   }
-  function hub(ink, paper) {
-    return '<circle cx="32" cy="32" r="6" fill="' + ink + '"/><circle cx="32" cy="32" r="2.2" fill="' + paper + '"/>';
-  }
+  var VB = 'viewBox="2 0 60 61"';
 
   /* The mark: a Rolodex on its stand. */
-  function mark(size) {
-    return '<svg width="' + size + '" height="' + Math.round(size * 56 / 54) + '" viewBox="5 4 54 56" aria-hidden="true">' +
-      stand('#0E0E0E') + fan('#1FAE80') + hub('#0E0E0E', '#FFFFFF') + '</svg>';
+  function mark(size, paper) {
+    return '<svg width="' + size + '" height="' + Math.round(size * 61 / 60) + '" ' + VB + ' style="overflow:visible" aria-hidden="true">' +
+      draw('#1FAE80', '#0E0E0E', paper || '#F4F5F2') + '</svg>';
   }
-  /* Animated mark for the splash: a full ring clipped to the top half spins like a turning Rolodex. */
+  /* Animated mark for the loading screen: the wheel spins round its hub and settles. */
   function spinningMark(size) {
-    return '<svg class="mark" width="' + size + '" height="' + Math.round(size * 56 / 54) + '" viewBox="5 4 54 56" role="img" aria-label="Rolodex turning">' +
-      '<defs><clipPath id="rl-top"><rect x="-10" y="-10" width="84" height="42.5"/></clipPath></defs>' +
-      stand('#0E0E0E') + '<g clip-path="url(#rl-top)">' + ring('#1FAE80') + '</g>' + hub('#0E0E0E', '#FFFFFF') + '</svg>';
+    return '<svg class="mark" width="' + size + '" height="' + Math.round(size * 61 / 60) + '" ' + VB + ' style="overflow:visible" role="img" aria-label="Rolodex turning">' +
+      draw('#1FAE80', '#0E0E0E', '#F4F5F2') + '</svg>';
   }
   /* Wordmark with the swiped double l. */
   function wordmark(px, cls) {
@@ -91,8 +96,7 @@
   /* The Rolodex mark as a tab icon: grey when idle, mint cards and ink stand when selected. */
   function tabMark(active) {
     var ink = active ? '#0E0E0E' : 'currentColor', cards = active ? '#1FAE80' : 'currentColor';
-    return '<svg viewBox="5 4 54 56" aria-hidden="true"><defs><clipPath id="tab-top"><rect x="-10" y="-10" width="84" height="42.5"/></clipPath></defs>' +
-      stand(ink) + '<g clip-path="url(#tab-top)">' + ring(cards) + '</g>' + hub(ink, '#FFFFFF') + '</svg>';
+    return '<svg ' + VB + ' style="overflow:visible" aria-hidden="true">' + draw(cards, ink, active ? '#E8F8F1' : '#FFFFFF', { card: 3.6, stand: 5.5 }) + '</svg>';
   }
 
   window.ICONS = I;

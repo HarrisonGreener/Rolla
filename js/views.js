@@ -41,22 +41,22 @@
     var c = co(job), read = S.isRead(job.id), saved = S.isSaved(job.id);
     var cls = depth === 0 ? 'card top' + (arrive ? ' arrive' : '') : 'card back-' + depth;
     return '<article class="' + cls + '" data-id="' + job.id + '"' +
-      (depth === 0 ? ' tabindex="0" aria-label="' + esc(job.title + ' at ' + c.name + ', ' + job.salary + '. Press Enter to read the listing, arrow keys to swipe.') + '"' : ' aria-hidden="true"') + '>' +
+      (depth === 0 ? ' tabindex="0" aria-label="' + esc(job.title + ' at ' + c.name + ', ' + job.salary + '. Press Enter to read the listing, up arrow to apply, down arrow to save, Delete to pass.') + '"' : ' aria-hidden="true"') + '>' +
       '<div class="media">' + jobArt(job) + '<div class="shade"></div>' +
         '<div class="on-media top">' + matchRing(job.match) +
           (depth === 0 ? '<button class="save-btn" data-act="save" data-id="' + job.id + '" aria-pressed="' + saved + '" aria-label="' + (saved ? 'Saved' : 'Save for later') + '">' + (saved ? I.bookmarkFill : I.bookmark) + '</button>' : '') + '</div>' +
         '<div class="on-media bottom"><span class="co-pill">' + A.mark(c, 30) + '<span class="label ellipsis">' + esc(c.name) + '</span>' + verified(c) + '</span>' +
           (S.isShortlisted(c.id) ? '<span class="pill pill-mint">Shortlisted</span>' : '<span class="pill pill-dark num">' + esc(job.posted) + ' ago</span>') + '</div>' +
       '</div>' +
-      '<div class="stamp stamp-pass">' + I.x + 'PASS</div><div class="stamp stamp-apply">' + I.check + 'APPLY</div>' +
+      '<div class="stamp stamp-pass">' + I.x + 'PASS</div><div class="stamp stamp-apply">' + I.arrowUp + 'APPLY</div><div class="stamp stamp-save">' + I.arrowDown + 'SAVE</div>' +
       '<div class="body-area">' +
         '<h2 class="h1">' + esc(job.title) + '</h2>' +
         '<div class="meta-row num"><span>' + ico(I.pound, 'ico-sm') + esc(job.salary) + '</span><span>' + ico(I.pin, 'ico-sm') + esc(job.loc) + '</span><span>' + ico(I.laptop, 'ico-sm') + esc(job.mode) + '</span></div>' +
         whyLine(job) +
         '<div class="readline">' + (read
-          ? '<span class="caption mint row g4" style="font-weight:600">' + ico(I.check, 'ico-sm') + 'Read · swipe right to apply</span>'
+          ? '<span class="caption mint row g4" style="font-weight:600">' + ico(I.arrowUp, 'ico-sm') + 'Swipe up to apply</span>'
           : '<span class="caption row g4">' + ico(I.lock, 'ico-sm') + 'Tap to read and unlock Apply</span>') +
-          '<span class="track"><span style="width:' + (read ? 100 : 4) + '%"></span></span></div>' +
+          '<span class="caption row g4 swipe-hint">' + ico(I.arrowDown, 'ico-sm') + 'Save</span></div>' +
       '</div>' +
     '</article>';
   }

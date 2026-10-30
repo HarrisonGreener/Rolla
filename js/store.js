@@ -89,7 +89,7 @@
     deck: function () {
       return D.jobs.filter(function (j) {
         var f = state.filters;
-        return !store.isPassed(j.id) && !store.isApplied(j.id) &&
+        return !store.isPassed(j.id) && !store.isApplied(j.id) && !store.isSaved(j.id) &&
           (f.cat === 'Any' || j.cat === f.cat) && (f.type === 'Any' || j.type === f.type) && (f.mode === 'Any' || j.mode === f.mode);
       }).sort(function (a, b) {
         var sa = store.isShortlisted(a.co) ? 1 : 0, sb = store.isShortlisted(b.co) ? 1 : 0;

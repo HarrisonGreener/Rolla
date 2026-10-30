@@ -106,26 +106,38 @@
     toast('Applied to ' + c.name, { icon: tint(I.check, '#7EE8C3'), action: 'tab', id: 'applied', actionLabel: 'View' });
   }
 
-  /* The Rolodex flip: the top card tips forward over its bottom edge and falls away,
-     while the card behind stands up into place. */
-  function flyOut(dir, then, dx) {
+  /* The Rolodex roll. Apply rolls the card up and over the top of the wheel; save rolls it
+     down and under; pass flicks it over the top. The next card rolls forward into place. */
+  function roll(kind, then, dy) {
     var card = app.querySelector('.card.top');
     if (!card) { then(); return; }
-    var x = typeof dx === 'number' ? dx : dir * 40;
-    var stamp = card.querySelector(dir < 0 ? '.stamp-pass' : '.stamp-apply');
+    var stamp = card.querySelector('.stamp-' + kind);
     if (stamp) stamp.style.opacity = 1;
+    var start = typeof dy === 'number' ? dy : 0;
     card.classList.add('dragging');
-    card.style.transformOrigin = '50% 100%';
-    card.style.transition = 'transform 0.5s cubic-bezier(0.45, 0, 0.75, 0.35), opacity 0.18s ease 0.32s';
-    requestAnimationFrame(function () {
-      card.style.transform = 'translateX(' + (x * 1.3) + 'px) translateY(40px) rotateX(-95deg) rotateZ(' + (dir * 4) + 'deg)';
-      card.style.opacity = '0';
-    });
+    card.style.transformOrigin = '50% 50%';
+    var end = {
+      apply: 'translateY(' + Math.min(start, 0) + 'px) translateY(-115%) rotateX(78deg) scale(0.92)',
+      save: 'translateY(' + Math.max(start, 0) + 'px) translateY(95%) rotateX(-78deg) scale(0.88)',
+      pass: 'translateY(-70%) rotateX(100deg) scale(0.9)',
+    }[kind];
+    card.style.transition = kind === 'pass'
+      ? 'transform 0.42s cubic-bezier(0.5, 0, 0.75, 0.3), opacity 0.2s ease 0.22s'
+      : 'transform 0.55s cubic-bezier(0.45, 0, 0.7, 0.35), opacity 0.25s ease 0.3s';
+    requestAnimationFrame(function () { card.style.transform = end; card.style.opacity = '0'; });
     var next = app.querySelector('.card.back-1');
-    if (next) { next.style.transition = 'transform 0.5s cubic-bezier(0.32, 0.72, 0, 1) 0.2s'; next.style.transform = 'none'; }
+    if (next) { next.style.transition = 'transform 0.55s cubic-bezier(0.32, 0.72, 0, 1) 0.15s'; next.style.transform = 'none'; }
     var after = app.querySelector('.card.back-2');
-    if (after) { after.style.transition = 'transform 0.5s cubic-bezier(0.32, 0.72, 0, 1) 0.18s, opacity 0.4s'; after.style.transform = 'translateY(-14px) scale(0.95)'; after.style.opacity = 1; }
-    setTimeout(then, 560);
+    if (after) { after.style.transition = 'transform 0.55s cubic-bezier(0.32, 0.72, 0, 1) 0.2s, opacity 0.4s'; after.style.transform = 'translateY(-14px) scale(0.95)'; after.style.opacity = 1; }
+    setTimeout(then, kind === 'pass' ? 460 : 580);
+  }
+
+  function doSave(id) {
+    var j = D.job(id);
+    if (!S.isSaved(id)) S.toggleSave(id);
+    ui.arrive = false;
+    render();
+    toast('Saved ' + j.title + ' for later', { icon: tint(I.bookmarkFill, '#7EE8C3'), action: 'undo-save', id: id, actionLabel: 'Undo' });
   }
 
   function share() {
@@ -171,8 +183,10 @@
     'applied-tab': function (id) { ui.appliedTab = id; render(); },
     'go-applied': function () { ui.appliedTab = 'applied'; home('applied'); },
 
-    pass: function () { var id = topJobId(); if (id) flyOut(-1, function () { doPass(id, true); }); },
-    apply: function () { var id = topJobId(); if (id) flyOut(1, function () { doApply(id, true); }); },
+    pass: function () { var id = topJobId(); if (id) roll('pass', function () { doPass(id, true); }); },
+    apply: function () { var id = topJobId(); if (id) roll('apply', function () { doApply(id, true); }); },
+    'save-top': function () { var id = topJobId(); if (id) roll('save', function () { doSave(id); }); },
+    'undo-save': function (id) { if (S.isSaved(id)) S.toggleSave(id); ui.arrive = true; render(); var t = app.querySelector('.toast'); if (t) t.remove(); },
     'apply-locked': function (id) {
       var jid = id || topJobId();
       if (top().v !== 'job' && jid) go({ v: 'job', id: jid });
@@ -184,6 +198,8 @@
     withdraw: function (id) { S.withdraw(id); render(); toast('Application withdrawn'); },
     unpass: function () { var n = S.get().passed.length; S.unpassAll(); ui.arrive = true; render(); toast(n + ' passed role' + (n === 1 ? ' is' : 's are') + ' back in your deck'); },
     save: function (id) {
+      // Saving the top card from the deck rolls it away; anywhere else it just toggles.
+      if (top().tab === 'discover' && top().v === 'tab' && id === topJobId()) { roll('save', function () { doSave(id); }); return; }
       S.toggleSave(id); render();
       if (S.isSaved(id)) toast('Saved for later', { icon: tint(I.bookmarkFill, '#7EE8C3'), action: 'go-saved', actionLabel: 'View' });
     },
@@ -291,9 +307,9 @@
   });
   app.addEventListener('click', function (e) { if (suppressClick) { e.stopPropagation(); e.preventDefault(); suppressClick = false; } }, true);
 
-  /* ---------- Swiping the top card ---------- */
+  /* ---------- Swiping the top card: up to apply, down to save ---------- */
   var drag = null;
-  var THRESHOLD = 110;
+  var THRESHOLD = 100;
 
   app.addEventListener('pointerdown', function (e) {
     var card = e.target.closest('.card.top');
@@ -308,28 +324,31 @@
     drag.dy = e.clientY - drag.y;
     if (!drag.moved && Math.abs(drag.dx) + Math.abs(drag.dy) > 6) { drag.moved = true; drag.card.classList.add('dragging'); }
     if (!drag.moved) return;
-    drag.card.style.transform = 'translate(' + drag.dx + 'px,' + (drag.dy * 0.2) + 'px) rotate(' + (drag.dx / 18) + 'deg)';
-    var k = Math.min(1, Math.abs(drag.dx) / THRESHOLD);
-    if (drag.next) { drag.next.style.transition = 'none'; drag.next.style.transform = 'translateY(' + (12 - 12 * k) + 'px) scale(' + (0.955 + 0.045 * k) + ')'; }
-    var pass = drag.card.querySelector('.stamp-pass'), apply = drag.card.querySelector('.stamp-apply');
-    var read = S.isRead(drag.id);
+    var dy = drag.dy, read = S.isRead(drag.id);
+    // Resist upward drags while Apply is locked, so the card won't leave without being read.
+    if (dy < 0 && !read) dy = -Math.pow(-dy, 0.78);
+    var tilt = Math.max(-40, Math.min(40, -dy / 5));
+    drag.card.style.transform = 'translate(' + (drag.dx * 0.12) + 'px,' + dy + 'px) rotateX(' + tilt + 'deg)';
+    var k = Math.min(1, Math.abs(drag.dy) / THRESHOLD);
+    if (drag.next) { drag.next.style.transition = 'none'; drag.next.style.transform = 'translateY(' + (-14 + 14 * k) + 'px) scale(' + (0.95 + 0.05 * k) + ')'; }
+    var apply = drag.card.querySelector('.stamp-apply'), save = drag.card.querySelector('.stamp-save');
     if (!read && !apply.classList.contains('locked')) { apply.classList.add('locked'); apply.innerHTML = I.lock + 'READ FIRST'; }
-    pass.style.opacity = Math.max(0, Math.min(1, -drag.dx / THRESHOLD));
-    apply.style.opacity = Math.max(0, Math.min(1, drag.dx / THRESHOLD));
+    apply.style.opacity = Math.max(0, Math.min(1, -drag.dy / THRESHOLD));
+    save.style.opacity = Math.max(0, Math.min(1, drag.dy / THRESHOLD));
   });
 
   function endDrag(e) {
     if (!drag || (e && e.pointerId !== drag.pid)) return;
     var d = drag; drag = null;
     if (!d.moved) { d.card.classList.remove('dragging'); go({ v: 'job', id: d.id }); return; }
-    if (d.dx < -THRESHOLD) { flyOut(-1, function () { doPass(d.id, true); }, d.dx); return; }
-    if (d.dx > THRESHOLD && S.isRead(d.id)) { flyOut(1, function () { doApply(d.id, true); }, d.dx); return; }
+    if (d.dy < -THRESHOLD && S.isRead(d.id)) { roll('apply', function () { doApply(d.id, true); }, d.dy); return; }
+    if (d.dy > THRESHOLD) { roll('save', function () { doSave(d.id); }, d.dy); return; }
     d.card.classList.remove('dragging');
     d.card.style.transform = '';
     if (d.next) { d.next.style.transition = ''; d.next.style.transform = ''; }
-    d.card.querySelector('.stamp-pass').style.opacity = 0;
     d.card.querySelector('.stamp-apply').style.opacity = 0;
-    if (d.dx > THRESHOLD) toast('Read the full listing first. Tap the card to open it.', { icon: tint(I.lock, '#B5B5B2') });
+    d.card.querySelector('.stamp-save').style.opacity = 0;
+    if (d.dy < -THRESHOLD) toast('Read the full listing first. Tap the card to open it.', { icon: tint(I.lock, '#B5B5B2') });
   }
   app.addEventListener('pointerup', endDrag);
   app.addEventListener('pointercancel', endDrag);
@@ -341,8 +360,9 @@
     if (!card) return;
     var id = card.getAttribute('data-id');
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go({ v: 'job', id: id }); }
-    else if (e.key === 'ArrowLeft') { e.preventDefault(); actions.pass(); }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); S.isRead(id) ? actions.apply() : actions['apply-locked'](id); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); S.isRead(id) ? actions.apply() : actions['apply-locked'](id); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); actions['save-top'](); }
+    else if (e.key === 'ArrowLeft' || e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); actions.pass(); }
   });
 
   /* ---------- Loading screen ---------- */
